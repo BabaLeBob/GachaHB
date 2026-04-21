@@ -85,18 +85,19 @@
                     const cardDiv = document.createElement('div');
                     cardDiv.className = 'card';
                     
-                    // On récupère le chemin. Si l'ID n'existe pas dans shop.json, on affiche l'ID pour débugger
-                    const imgPath = shopData[id];
+                    // On récupère le chemin du shop.json (ex: OPTCG/Carte4.png)
+                    let pathFromShop = shopData[id] || "";
 
-                    if (!imgPath) {
-                        cardDiv.innerHTML = `<div style="padding:20px; background:#444;">ID ${id} non listé dans shop.json</div>`;
-                    } else {
-                        cardDiv.innerHTML = `
-                            <img src="./${imgPath}" alt="Carte ${id}" 
-                                onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300?text=Fichier+Introuvable';">
-                            <div class="card-id">ID: ${id}</div>
-                        `;
-                    }
+                    // On ajoute "Carte/" devant car c'est là que tu les as rangés sur GitHub !
+                    // On vérifie aussi si le chemin ne commence pas déjà par "Carte" pour éviter les doublons
+                    let finalPath = pathFromShop.startsWith("Carte/") ? pathFromShop : "Carte/" + pathFromShop;
+
+                    cardDiv.innerHTML = `
+                        <img src="${finalPath}" 
+                            alt="Carte ${id}" 
+                            onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300?text=Lien+Mort';">
+                        <div class="card-id">ID: ${id}</div>
+                    `;
                     grid.appendChild(cardDiv);
                 });
 
