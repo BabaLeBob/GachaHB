@@ -1,85 +1,500 @@
 {
-    "001": "Shinseina1.png",
-    "007": "Reylen1.png",
-    "008": "Tsuki1.png",
-    "009": "Duncan1.png",
-    "010": "Tanae1.png",
-    "016": "Ryh1.png",
-    "019": "Sprimus1.png",
-    "020": "Airen1.png",
-    "022": "Karisse1.png",
-    "025": "Ghosti1.png",
-    "030": "Aessa1.png",
-    "031": "Ben1.png",
-    "035": "Morrigan1.png",
-    "041": "Lea1.png",
-    "002": "Orphee2.png",
-    "011": "Maxine1.png",
-    "015": "Alabyran1.png",
-    "021": "Presage1.png",
-    "023": "Kara1.png",
-    "026": "Solanea1.png",
-    "036": "Entrainement.png",
-    "038": "Antanaclase2.png",
-    "040": "Avalon1.jpg",
-    "003": "Thorgestr1.png",
-    "006": "OrpheeShinseina1.jpg",
-    "012": "Arnhild1.png",
-    "024": "Shinseina2.png",
-    "028": "Tsuki2.png",
-    "029": "Airen2.png",
-    "033": "Survecu.png",
-    "034": "Tanae2.png",
-    "037": "Ben2.png",
-    "042": "Caleb1.png",
-    "004": "Muzalt1.png",
-    "013": "ArnhildThorgestr1.jpg",
-    "014": "TsukiGhosti1.png",
-    "017": "Ryh2.jpg",
-    "032": "Valendias.png",
-    "039": "LesHeritieres.png",
-    "005": "Antanaclase1.png",
-    "018": "Typhon1.jpg",
-    "027": "ThorAntaArnh1.png",
-    "S01": "Arnhild2.png",
-    "S02": "Presage2.png",
-    "S03": "Thorgestr2.jpg",
-    "S04": "Beach.jpg",
-    "S05": "UWU.png",
-    "S06": "Ben3.jpg",
-    "S07": "Adramal1.png",
-    "C01": "Concile/Gribeline1.png",
-    "C02": "Concile/Desaati1.png",
-    "C03": "Concile/Noora1.jpg",
-    "C04": "Concile/Frida1.png",
-    "C05": "Concile/Sylkabe1.png",
-    "C06": "Concile/Sylkabe2.png",
-    "OP004": "OPTCG/Carte4.png",
-    "OP006": "OPTCG/Carte6.png",
-    "OP011": "OPTCG/Carte11.png",
-    "OP012": "OPTCG/Carte12.png",
-    "OP013": "OPTCG/Carte13.png",
-    "OP020": "OPTCG/Carte20.png",
-    "OP021": "OPTCG/Carte21.png",
-    "OP005": "OPTCG/Carte5.png",
-    "OP007": "OPTCG/Carte7.png",
-    "OP009": "OPTCG/Carte9.png",
-    "OP014": "OPTCG/Carte14.png",
-    "OP018": "OPTCG/Carte18.png",
-    "OP022": "OPTCG/Carte22.png",
-    "OP024": "OPTCG/Carte24.png",
-    "OP027": "OPTCG/Carte27.png",
-    "OP003": "OPTCG/Carte3.png",
-    "OP008": "OPTCG/Carte8.png",
-    "OP015": "OPTCG/Carte15.png",
-    "OP017": "OPTCG/Carte17.png",
-    "OP019": "OPTCG/Carte19.png",
-    "OP026": "OPTCG/Carte26.png",
-    "OP002": "OPTCG/Carte2.png",
-    "OP016": "OPTCG/Carte16.png",
-    "OP025": "OPTCG/Carte25.png",
-    "OP001": "OPTCG/Carte1.png",
-    "OP023": "OPTCG/Carte23.png",
-    "OP010": "OPTCG/Carte10.png",
-    "OP028": "OPTCG/Carte28.png"
+    "001": {
+        "nom": "Acolyte Shinseina",
+        "img": "Shinseina1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "007": {
+        "nom": "Reylen, l'Amnésique",
+        "img": "Reylen1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "008": {
+        "nom": "Tsuki, Sergente des Protecteurs du Lotus",
+        "img": "Tsuki1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "009": {
+        "nom": "Duncan, le petit protecteur",
+        "img": "Duncan1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "010": {
+        "nom": "Tanaé, La Recrue Prometteuse",
+        "img": "Tanae1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "016": {
+        "nom": "Ryh, La Bête-Arbitre",
+        "img": "Ryh1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "019": {
+        "nom": "Sprimus, le Protecteur Juste",
+        "img": "Sprimus1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "020": {
+        "nom": "Airen, la Recrue",
+        "img": "Airen1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "022": {
+        "nom": "Karisse, Protecteur du Lotus",
+        "img": "Karisse1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "025": {
+        "nom": "Ghosti, le Sergent Froid",
+        "img": "Ghosti1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "030": {
+        "nom": "Aessa, la Recrue",
+        "img": "Aessa1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "031": {
+        "nom": "Ben",
+        "img": "Ben1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "035": {
+        "nom": "Protecteur Morrigan",
+        "img": "Morrigan1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "041": {
+        "nom": "Lea, l'écuyère idiote",
+        "img": "Lea1.png",
+        "rarete": "Commun",
+        "collection": "PROTECTEUR"
+    },
+    "002": {
+        "nom": "Orphée, Coup de Pied Explosif ",
+        "img": "Orphee2.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "011": {
+        "nom": "Maxine, L'Éclatante",
+        "img": "Maxine1.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "015": {
+        "nom": "Alabryan, la Lame Protectrice",
+        "img": "Alabyran1.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "021": {
+        "nom": "Présage, l'Éxaltée",
+        "img": "Presage1.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "023": {
+        "nom": "Kara, le Doré",
+        "img": "Kara1.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "026": {
+        "nom": "Solanea, la Recrue Conciliaire",
+        "img": "Solanea1.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "036": {
+        "nom": "Entrainement",
+        "img": "Entrainement.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "038": {
+        "nom": "Antanaclase, l'Apprentie",
+        "img": "Antanaclase2.png",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "040": {
+        "nom": "Avalon, le Protecteur",
+        "img": "Avalon1.jpg",
+        "rarete": "Rare",
+        "collection": "PROTECTEUR"
+    },
+    "003": {
+        "nom": "Thórgestr, l'Étoile du Matin",
+        "img": "Thorgestr1.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "006": {
+        "nom": "Orphée et Shinseina, les Eternelles Suspendus",
+        "img": "OrpheeShinseina1.jpg",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "012": {
+        "nom": "Arnhild, Étoile du soir",
+        "img": "Arnhild1.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "024": {
+        "nom": "Shinseina, l'Ombre",
+        "img": "Shinseina2.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "028": {
+        "nom": "Tsuki, Flamme Débordante",
+        "img": "Tsuki2.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "029": {
+        "nom": "Airen, l'Enfant des Astres",
+        "img": "Airen2.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "033": {
+        "nom": "J'ai... Survécu.",
+        "img": "Survecu.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "034": {
+        "nom": "Tanae, La fille des marées",
+        "img": "Tanae2.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "037": {
+        "nom": "Ben, l'Idiot cosmique",
+        "img": "Ben2.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "042": {
+        "nom": "Caleb, le destructeur de Lance",
+        "img": "Caleb1.png",
+        "rarete": "Legendaire",
+        "collection": "PROTECTEUR"
+    },
+    "004": {
+        "nom": "Muzalt",
+        "img": "Muzalt1.png",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "013": {
+        "nom": "Thórgestr et Arnhild, Les Étoiles des Protecteurs",
+        "img": "ArnhildThorgestr1.jpg",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "014": {
+        "nom": "Tsuki et Ghosti, les Amants Feu-glacé",
+        "img": "TsukiGhosti1.png",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "017": {
+        "nom": "Ryh, la Bête Libérée",
+        "img": "Ryh2.jpg",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "032": {
+        "nom": "Le Valendias",
+        "img": "Valendias.png",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "039": {
+        "nom": "Les Héritières",
+        "img": "LesHeritieres.png",
+        "rarete": "Mythique",
+        "collection": "PROTECTEUR"
+    },
+    "005": {
+        "nom": "Antanaclase, l'Augure des Augures",
+        "img": "Antanaclase1.png",
+        "rarete": "Oracle",
+        "collection": "PROTECTEUR"
+    },
+    "018": {
+        "nom": "Le Typhon",
+        "img": "Typhon1.jpg",
+        "rarete": "Oracle",
+        "collection": "PROTECTEUR"
+    },
+    "027": {
+        "nom": "Thórgestr, Antanaclase et Arnhild, les Légendes des Protecteurs",
+        "img": "ThorAntaArnh1.png",
+        "rarete": "Oracle",
+        "collection": "PROTECTEUR"
+    },
+    "S01": {
+        "nom": "Arnhild, Face au Passé",
+        "img": "Arnhild2.png",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S02": {
+        "nom": "Présage, la Beauté Puissante",
+        "img": "Presage2.png",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S03": {
+        "nom": "Thórgestr, l'Ultime force",
+        "img": "Thorgestr2.jpg",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S04": {
+        "nom": "Beach Time !",
+        "img": "Beach.jpg",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S05": {
+        "nom": "UWU",
+        "img": "UWU.png",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S06": {
+        "nom": "Ben le petit prince",
+        "img": "Ben3.jpg",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "S07": {
+        "nom": "AdraMale",
+        "img": "Adramal1.png",
+        "rarete": "Secret",
+        "collection": "PROTECTEUR"
+    },
+    "C01": {
+        "nom": "Gribeline",
+        "img": "Concile/Gribeline1.png",
+        "rarete": "Commun",
+        "collection": "CONCILE"
+    },
+    "C02": {
+        "nom": "Desaati",
+        "img": "Concile/Desaati1.png",
+        "rarete": "Rare",
+        "collection": "CONCILE"
+    },
+    "C03": {
+        "nom": "Noora",
+        "img": "Concile/Noora1.jpg",
+        "rarete": "Legendaire",
+        "collection": "CONCILE"
+    },
+    "C04": {
+        "nom": "Frida",
+        "img": "Concile/Frida1.png",
+        "rarete": "Mythique",
+        "collection": "CONCILE"
+    },
+    "C05": {
+        "nom": "Sylkabe",
+        "img": "Concile/Sylkabe1.png",
+        "rarete": "Oracle",
+        "collection": "CONCILE"
+    },
+    "C06": {
+        "nom": "Sylakbe l'Ecarlate",
+        "img": "Concile/Sylkabe2.png",
+        "rarete": "Secret",
+        "collection": "CONCILE"
+    },
+    "OP004": {
+        "nom": "Ben",
+        "img": "OPTCG/Carte4.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP006": {
+        "nom": "Gribeline",
+        "img": "OPTCG/Carte6.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP011": {
+        "nom": "Maxine",
+        "img": "OPTCG/Carte11.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP012": {
+        "nom": "Mira",
+        "img": "OPTCG/Carte12.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP013": {
+        "nom": "Morrigan",
+        "img": "OPTCG/Carte13.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP020": {
+        "nom": "Shinseina",
+        "img": "OPTCG/Carte20.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP021": {
+        "nom": "Solanea",
+        "img": "OPTCG/Carte21.png",
+        "rarete": "Commun",
+        "collection": "OPTCG"
+    },
+    "OP005": {
+        "nom": "Frida",
+        "img": "OPTCG/Carte5.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP007": {
+        "nom": "Guu",
+        "img": "OPTCG/Carte7.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP009": {
+        "nom": "Kara",
+        "img": "OPTCG/Carte9.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP014": {
+        "nom": "Noora",
+        "img": "OPTCG/Carte14.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP018": {
+        "nom": "Sciel",
+        "img": "OPTCG/Carte18.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP022": {
+        "nom": "Sprimus",
+        "img": "OPTCG/Carte22.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP024": {
+        "nom": "Tanaé",
+        "img": "OPTCG/Carte24.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP027": {
+        "nom": "Utahime",
+        "img": "OPTCG/Carte27.png",
+        "rarete": "Rare",
+        "collection": "OPTCG"
+    },
+    "OP003": {
+        "nom": "Avalon",
+        "img": "OPTCG/Carte3.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP008": {
+        "nom": "Hylbad",
+        "img": "OPTCG/Carte8.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP015": {
+        "nom": "Plus jamais !",
+        "img": "OPTCG/Carte15.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP017": {
+        "nom": "Ryh",
+        "img": "OPTCG/Carte17.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP019": {
+        "nom": "Shinseina",
+        "img": "OPTCG/Carte19.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP026": {
+        "nom": "Tsuki",
+        "img": "OPTCG/Carte26.png",
+        "rarete": "Legendaire",
+        "collection": "OPTCG"
+    },
+    "OP002": {
+        "nom": "Arnhild",
+        "img": "OPTCG/Carte2.png",
+        "rarete": "Mythique",
+        "collection": "OPTCG"
+    },
+    "OP016": {
+        "nom": "Présage",
+        "img": "OPTCG/Carte16.png",
+        "rarete": "Mythique",
+        "collection": "OPTCG"
+    },
+    "OP025": {
+        "nom": "Thorgestr",
+        "img": "OPTCG/Carte25.png",
+        "rarete": "Mythique",
+        "collection": "OPTCG"
+    },
+    "OP001": {
+        "nom": "Antanaclase",
+        "img": "OPTCG/Carte1.png",
+        "rarete": "Oracle",
+        "collection": "OPTCG"
+    },
+    "OP023": {
+        "nom": "Sylkabe",
+        "img": "OPTCG/Carte23.png",
+        "rarete": "Oracle",
+        "collection": "OPTCG"
+    },
+    "OP010": {
+        "nom": "Le Typhon",
+        "img": "OPTCG/Carte10.png",
+        "rarete": "Secret",
+        "collection": "OPTCG"
+    },
+    "OP028": {
+        "nom": "Vildiur",
+        "img": "OPTCG/Carte28.png",
+        "rarete": "Secret",
+        "collection": "OPTCG"
+    }
 }

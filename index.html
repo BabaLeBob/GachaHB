@@ -3,29 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GachaHB | Ma Collection</title>
+    <title>GachaHB | Collection Royale</title>
     <style>
-        :root { --bg: #2f3136; --card-bg: #36393f; --text: #dcddde; --accent: #5865f2; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); text-align: center; padding: 20px; }
-        .search-box { background: var(--card-bg); padding: 20px; border-radius: 10px; display: inline-block; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        input { padding: 10px; border-radius: 5px; border: none; outline: none; width: 200px; }
-        button { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #4752c4; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-        .card { background: var(--card-bg); border-radius: 8px; padding: 10px; border: 1px solid #444; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .card img { width: 100%; border-radius: 5px; display: block; margin-bottom: 10px; min-height: 200px; background: #202225; }
-        .card-id { font-size: 12px; color: #888; }
-        .status { margin-bottom: 20px; font-weight: bold; }
+        :root { 
+            --bg: #202225; --card-bg: #2f3136; --text: #ffffff; --accent: #5865f2; 
+            --common: #b9bbbe; --rare: #43b581; --legend: #faa61a; --mythic: #f04747; --oracle: #ffee00; --secret: #eb459e;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        h1 { margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+
+        .search-box { background: var(--card-bg); padding: 25px; border-radius: 15px; display: inline-block; margin-bottom: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        input { padding: 12px; border-radius: 8px; border: none; width: 250px; font-size: 16px; margin-right: 10px; }
+        button { padding: 12px 25px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        button:hover { background: #4752c4; transform: scale(1.05); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; max-width: 1300px; margin: 0 auto; }
+        
+        .card { 
+            background: var(--card-bg); border-radius: 12px; padding: 15px; border: 1px solid #444; 
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; 
+        }
+        .card:hover { transform: scale(1.03); border-color: var(--accent); box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); }
+
+        .card img { 
+            width: 100%; height: 280px; object-fit: contain; border-radius: 8px; 
+            background: #18191c; margin-bottom: 15px;
+        }
+
+        .card-name { font-size: 16px; font-weight: bold; margin-bottom: 8px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+        
+        .badge { font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; margin-bottom: 5px; color: #000; }
+        .collection-tag { font-size: 10px; color: #b9bbbe; font-style: italic; margin-top: 5px; }
+
+        /* Couleurs des raretés */
+        .rarete-commun { background: var(--common); }
+        .rarete-rare { background: var(--rare); color: white; }
+        .rarete-legendaire { background: var(--legend); color: white; }
+        .rarete-mythique { background: var(--mythic); color: white; }
+        .rarete-oracle { background: var(--oracle); box-shadow: 0 0 10px #ffee00; }
+        .rarete-secret { background: var(--secret); color: white; box-shadow: 0 0 10px #eb459e; }
+
+        .status { margin-bottom: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
 
-    <h1>🎴 Ma Collection Gacha</h1>
+    <h1>📜 GachaHB : Galerie des Joueurs</h1>
     
     <div class="search-box">
-        <input type="text" id="username" placeholder="Entre ton pseudo Discord">
-        <button onclick="displayCollection()">Voir ma collection</button>
+        <input type="text" id="username" placeholder="Pseudo Discord (ex: Bob)">
+        <button onclick="displayCollection()">Ouvrir le grimoire</button>
     </div>
 
     <div id="status" class="status"></div>
@@ -38,16 +65,14 @@
             const status = document.getElementById('status');
 
             if (!searchName) return;
-
             grid.innerHTML = "";
-            status.innerText = "⏳ Chargement...";
+            status.innerText = "⏳ Lecture des parchemins...";
 
             try {
                 const cb = "?t=" + Date.now();
-
-                // Vérification noms.json
+                
+                // 1. Charger les pseudos
                 const resNames = await fetch('./noms.json' + cb);
-                if (!resNames.ok) throw new Error("Fichier noms.json introuvable sur GitHub");
                 const namesData = await resNames.json();
 
                 let userId = null;
@@ -59,50 +84,48 @@
                 }
 
                 if (!userId) {
-                    status.innerText = "❌ Pseudo non trouvé.";
+                    status.innerText = "❌ Ce voyageur est inconnu.";
                     return;
                 }
 
-                // Vérification user_cards.json
-                const resUserCards = await fetch('./user_cards.json' + cb);
-                if (!resUserCards.ok) throw new Error("Fichier user_cards.json introuvable");
-                const userCards = await resUserCards.json();
-                const myCardsIds = userCards[userId] || [];
+                // 2. Charger les cartes possédées
+                const resUser = await fetch('./user_cards.json' + cb);
+                const userCards = await resUser.json();
+                const myIds = userCards[userId] || [];
 
-                // Vérification shop.json (LE PLUS IMPORTANT)
+                // 3. Charger la base de données shop.json
                 const resShop = await fetch('./shop.json' + cb);
-                if (!resShop.ok) throw new Error("Fichier shop.json introuvable sur GitHub ! Lance ton bot pour le créer.");
                 const shopData = await resShop.json();
 
-                if (myCardsIds.length === 0) {
-                    status.innerText = "📭 Aucune carte dans la collection.";
+                if (myIds.length === 0) {
+                    status.innerText = "📭 Ce joueur ne possède aucune carte.";
                     return;
                 }
 
-                status.innerText = `✅ ${myCardsIds.length} cartes trouvées !`;
+                status.innerText = `✨ Collection de ${namesData[userId]} (${myIds.length} cartes)`;
 
-                myCardsIds.forEach(id => {
+                myIds.forEach(id => {
+                    const info = shopData[id];
+                    if (!info) return;
+
                     const cardDiv = document.createElement('div');
                     cardDiv.className = 'card';
                     
-                    // On récupère le chemin du shop.json (ex: OPTCG/Carte4.png)
-                    let pathFromShop = shopData[id] || "";
-
-                    // On ajoute "Carte/" devant car c'est là que tu les as rangés sur GitHub !
-                    // On vérifie aussi si le chemin ne commence pas déjà par "Carte" pour éviter les doublons
-                    let finalPath = pathFromShop.startsWith("Carte/") ? pathFromShop : "Carte/" + pathFromShop;
+                    const rareteClass = "rarete-" + info.rarete.toLowerCase();
+                    let finalPath = info.img.startsWith("Carte/") ? info.img : "Carte/" + info.img;
 
                     cardDiv.innerHTML = `
-                        <img src="${finalPath}" 
-                            alt="Carte ${id}" 
-                            onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300?text=Lien+Mort';">
-                        <div class="card-id">ID: ${id}</div>
+                        <img src="${finalPath}" onerror="this.src='https://via.placeholder.com/200x300?text=Image+Perdue'">
+                        <div class="badge ${rareteClass}">${info.rarete}</div>
+                        <div class="card-name">${info.nom}</div>
+                        <div class="collection-tag">Série: ${info.collection}</div>
+                        <div style="font-size:9px; color:#555; margin-top:5px;">ID: ${id}</div>
                     `;
                     grid.appendChild(cardDiv);
                 });
 
             } catch (err) {
-                status.innerText = "⚠️ Erreur : " + err.message;
+                status.innerText = "⚠️ Erreur de chargement. Le Bot a-t-il créé shop.json ?";
                 console.error(err);
             }
         }
