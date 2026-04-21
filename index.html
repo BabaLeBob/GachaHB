@@ -41,13 +41,13 @@
 
             grid.innerHTML = "";
             status.innerText = "⏳ Chargement...";
-            status.style.color = "white";
 
             try {
                 const cb = "?t=" + Date.now();
 
-                // 1. On récupère l'ID du joueur via son nom
+                // Vérification noms.json
                 const resNames = await fetch('./noms.json' + cb);
+                if (!resNames.ok) throw new Error("Fichier noms.json introuvable sur GitHub");
                 const namesData = await resNames.json();
 
                 let userId = null;
@@ -63,40 +63,46 @@
                     return;
                 }
 
-                // 2. On récupère la liste de ses cartes (user_cards.json)
+                // Vérification user_cards.json
                 const resUserCards = await fetch('./user_cards.json' + cb);
+                if (!resUserCards.ok) throw new Error("Fichier user_cards.json introuvable");
                 const userCards = await resUserCards.json();
                 const myCardsIds = userCards[userId] || [];
 
-                // 3. On récupère le dictionnaire des images (shop.json)
+                // Vérification shop.json (LE PLUS IMPORTANT)
                 const resShop = await fetch('./shop.json' + cb);
+                if (!resShop.ok) throw new Error("Fichier shop.json introuvable sur GitHub ! Lance ton bot pour le créer.");
                 const shopData = await resShop.json();
 
                 if (myCardsIds.length === 0) {
-                    status.innerText = "📭 Tu n'as pas encore de cartes.";
+                    status.innerText = "📭 Aucune carte dans la collection.";
                     return;
                 }
 
                 status.innerText = `✅ ${myCardsIds.length} cartes trouvées !`;
 
-                // 4. Affichage
                 myCardsIds.forEach(id => {
                     const cardDiv = document.createElement('div');
                     cardDiv.className = 'card';
                     
-                    // On cherche le chemin de l'image dans shop.json
-                    const imgPath = shopData[id] || "";
+                    // On récupère le chemin. Si l'ID n'existe pas dans shop.json, on affiche l'ID pour débugger
+                    const imgPath = shopData[id];
 
-                    cardDiv.innerHTML = `
-                        <img src="${imgPath}" onerror="this.src='https://via.placeholder.com/200x300?text=Image+Manquante'">
-                        <div class="card-id">ID: ${id}</div>
-                    `;
+                    if (!imgPath) {
+                        cardDiv.innerHTML = `<div style="padding:20px; background:#444;">ID ${id} non listé dans shop.json</div>`;
+                    } else {
+                        cardDiv.innerHTML = `
+                            <img src="./${imgPath}" alt="Carte ${id}" 
+                                onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300?text=Fichier+Introuvable';">
+                            <div class="card-id">ID: ${id}</div>
+                        `;
+                    }
                     grid.appendChild(cardDiv);
                 });
 
             } catch (err) {
+                status.innerText = "⚠️ Erreur : " + err.message;
                 console.error(err);
-                status.innerText = "⚠️ Erreur de connexion aux fichiers JSON.";
             }
         }
     </script>
