@@ -1,0 +1,50 @@
+[
+  {
+    "id": "C001",
+    "nom": "Soldat Perdu",
+    "rarete": "Commun",
+    "edition": "Origines",
+    "description": "Un soldat oublié sur un champ de bataille ancien.",
+    "image": "Commun/soldat_perdu.png"
+  },
+  {
+    "id": "C002",
+    "nom": "Archer Vagabond",
+    "rarete": "Commun",
+    "edition": "Origines",
+    "description": "Un archer solitaire qui ne rate jamais sa cible.",
+    "image": "Commun/archer_vagabond.png"
+  },
+  {
+    "id": "R001",
+    "nom": "Mage de Cristal",
+    "rarete": "Rare",
+    "edition": "Origines",
+    "description": "Canalise la magie à travers des cristaux anciens.",
+    "image": "Rare/mage_cristal.png"
+  },
+  {
+    "id": "L001",
+    "nom": "Dragon Céleste",
+    "rarete": "Legendaire",
+    "edition": "Cieux Brisés",
+    "description": "Son rugissement fait trembler les royaumes.",
+    "image": "Legendaire/dragon_celeste.png"
+  },
+  {
+    "id": "M001",
+    "nom": "Dieu Oublié",
+    "rarete": "Mythique",
+    "edition": "Apocalypse",
+    "description": "Une entité bannie hors du temps.",
+    "image": "Mythique/dieu_oublie.png"
+  },
+  {
+    "id": "O001",
+    "nom": "Oracle du Néant",
+    "rarete": "Oracle",
+    "edition": "Néant Absolu",
+    "description": "Il connaît toutes les issues possibles… et impossibles.",
+    "image": "Oracle/oracle_neant.png"
+  }
+]

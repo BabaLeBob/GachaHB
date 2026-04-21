@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GachaHB | Collection</title>
+    <style>
+        :root {
+            --bg: #2f3136;
+            --card-bg: #36393f;
+            --text: #dcddde;
+            --accent: #5865f2;
+            --input-bg: #202225;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { width: 100%; max-width: 1000px; text-align: center; }
+
+        .search-box {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        input {
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            color: white;
+            padding: 12px;
+            border-radius: 5px;
+            width: 250px;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover { background: #4752c4; }
+
+        .status { margin-bottom: 20px; font-weight: bold; min-height: 24px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .card-item {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: 0.3s;
+        }
+
+        .card-item:hover { transform: translateY(-5px); border-color: var(--accent); }
+
+        .card-item img {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            display: block;
+            background: #23272a;
+        }
+
+        .card-id { padding: 8px; font-size: 0.8em; color: #888; background: rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎴 Ma Collection Gacha</h1>
+        <p style="color: #b9bbbe;">Entre ton pseudo pour voir tes cartes</p>
+
+        <div class="search-box">
+            <input type="text" id="username" placeholder="Pseudo Discord (ex: baba)">
+            <button onclick="displayCollection()">Rechercher</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="collectionGrid" class="grid"></div>
+    </div>
+
+    <script>
+        async function displayCollection() {
+            const searchName = document.getElementById('username').value.trim().toLowerCase();
+            const grid = document.getElementById('collectionGrid');
+            const status = document.getElementById('status');
+
+            if (!searchName) return;
+
+            grid.innerHTML = "";
+            status.innerText = "⏳ Recherche...";
+            status.style.color = "white";
+
+            try {
+                // On ajoute un timestamp pour forcer la mise à jour (éviter le cache)
+                const cacheBuster = "?t=" + Date.now();
+
+                // 1. Charger noms.json (Lien Pseudo -> ID)
+                const resNames = await fetch('./noms.json' + cacheBuster);
+                if (!resNames.ok) throw new Error("noms.json introuvable.");
+                const namesData = await resNames.json();
+
+                // 2. Trouver l'ID correspondant au pseudo
+                let foundUserId = null;
+                let displayName = "";
+
+                for (const [id, name] of Object.entries(namesData)) {
+                    if (name.toLowerCase() === searchName) {
+                        foundUserId = id;
+                        displayName = name;
+                        break;
+                    }
+                }
+
+                if (!foundUserId) {
+                    status.innerText = "❌ Pseudo non trouvé dans la base de données.";
+                    status.style.color = "#f04747";
+                    return;
+                }
+
+                // 3. Charger user_cards.json
+                const resCards = await fetch('./user_cards.json' + cacheBuster);
+                if (!resCards.ok) throw new Error("user_cards.json introuvable.");
+                const cardsData = await resCards.json();
+
+                const myCards = cardsData[foundUserId] || [];
+
+                if (myCards.length === 0) {
+                    status.innerText = `📭 ${displayName} n'a aucune carte.`;
+                    return;
+                }
+
+                status.innerText = `✅ ${displayName} possède ${myCards.length} cartes`;
+
+                // 4. Afficher les images
+                myCards.sort((a, b) => a - b).forEach(id => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card-item';
+                    
+                    const formattedId = String(id).padStart(3, '0');
+                    // Chemin relatif vers tes images
+                    const imgUrl = `Carte/OPTCG/Carte${formattedId}.png`;
+
+                    cardDiv.innerHTML = `
+                        <img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/200x300?text=Carte+${formattedId}'">
+                        <div class="card-id">ID: #${formattedId}</div>
+                    `;
+                    grid.appendChild(cardDiv);
+                });
+
+            } catch (err) {
+                console.error(err);
+                status.innerText = "⚠️ Erreur technique (vérifie GitHub Pages).";
+                status.style.color = "#f04747";
+            }
+        }
+
+        // Permet de valider avec la touche Entrée
+        document.getElementById('username').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') displayCollection();
+        });
+    </script>
+</body>
+</html>
