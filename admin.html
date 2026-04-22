@@ -30,23 +30,44 @@
 
         async function load() {
             const cb = "?t=" + Date.now();
-            const rShop = await fetch('shop.json'+cb);
-            const shop = await rShop.json();
-            let html = "";
-            for(let id in shop) {
-                html += `<div class="card-row" data-id="${id}">
-                    <div style="font-weight:bold">${shop[id].nom}</div>
-                    <div><label>PV</label><input type="number" class="hp" value="100"></div>
-                    <div><label>ATK</label><input type="number" class="atk" value="15"></div>
-                    <div><label>RNG</label><input type="number" class="rng" value="2"></div>
-                    <div><label>SPD</label><input type="number" class="spd" step="0.1" value="2.0"></div>
-                    <div><label>AS (ms)</label><input type="number" class="as" value="1000"></div>
-                    <div><label>POUVOIR</label><select class="power">
-                        ${powerList.map(p => `<option value="${p.id}" title="${p.d}">${p.n}</option>`).join('')}
-                    </select></div>
-                </div>`;
+            
+            try {
+                // On charge le shop ET les stats actuelles en parallèle
+                const [rShop, rStats] = await Promise.all([
+                    fetch('shop.json' + cb),
+                    fetch('stats.json' + cb).catch(() => null) // On ignore l'erreur si stats.json n'existe pas encore
+                ]);
+
+                const shop = await rShop.json();
+                let currentStats = {};
+                
+                // Si stats.json existe et est lisible, on récupère les données
+                if (rStats && rStats.ok) {
+                    currentStats = await rStats.json();
+                }
+
+                let html = "";
+                for (let id in shop) {
+                    // On prend les stats existantes OU les valeurs par défaut
+                    const s = currentStats[id] || { hp: 100, atk: 15, rng: 2, spd: 2.0, as: 1000, power: "none" };
+                    
+                    html += `<div class="card-row" data-id="${id}">
+                        <div style="font-weight:bold">${shop[id].nom}</div>
+                        <div><label>PV</label><input type="number" class="hp" value="${s.hp}"></div>
+                        <div><label>ATK</label><input type="number" class="atk" value="${s.atk}"></div>
+                        <div><label>RNG</label><input type="number" class="rng" value="${s.rng}"></div>
+                        <div><label>SPD</label><input type="number" class="spd" step="0.1" value="${s.spd}"></div>
+                        <div><label>AS (ms)</label><input type="number" class="as" value="${s.as}"></div>
+                        <div><label>POUVOIR</label><select class="power">
+                            ${powerList.map(p => `<option value="${p.id}" title="${p.d}" ${s.power === p.id ? 'selected' : ''}>${p.n}</option>`).join('')}
+                        </select></div>
+                    </div>`;
+                }
+                document.getElementById('editor-list').innerHTML = html;
+            } catch (e) {
+                console.error("Erreur de chargement :", e);
+                document.getElementById('editor-list').innerHTML = "Erreur lors du chargement des fichiers JSON.";
             }
-            document.getElementById('editor-list').innerHTML = html;
         }
 
         function generateJSON() {
@@ -63,6 +84,8 @@
             });
             document.getElementById('output').value = JSON.stringify(res, null, 4);
         }
+
+        // Lancement au chargement de la page
         load();
     </script>
 </body>
