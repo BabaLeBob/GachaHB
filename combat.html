@@ -111,23 +111,38 @@
             units.forEach(u => {
                 if(u.dead) return;
 
-                // 1. GESTION DES MORT-VIVANTS (Sécurité HP)
+                // 1. GESTION DES HP ET MORT
                 if(u.hp <= 0) { die(u); return; }
 
-                // 2. POUVOIR : AURA DE STASE (Scan des ennemis proches)
+                // 2. SCAN DE L'AURA DE STASE
+                let previouslyParalyzed = u.isParalyzed;
                 u.isParalyzed = false;
+                
                 units.forEach(owner => {
-                    if(!owner.dead && owner.team !== u.team && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
-                        if(getDist(u, owner) < 150) u.isParalyzed = true;
+                    if(!owner.dead && owner.team !== u.team && owner.power && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
+                        if(getDist(u, owner) < 150) {
+                            u.isParalyzed = true;
+                        }
                     }
                 });
 
                 if(u.isParalyzed) {
                     u.el.classList.add('paralyzed');
+                    // On ne met pas vx/vy à 0 ici, on bloque juste le mouvement plus bas
                 } else {
                     u.el.classList.remove('paralyzed');
-                    // MOUVEMENT
-                    u.x += u.vx; u.y += u.vy;
+                    
+                    // SÉCURITÉ : Si on vient juste de sortir de paralysie, on s'assure d'avoir une direction
+                    if (previouslyParalyzed || (u.vx === 0 && u.vy === 0)) {
+                        let angle = Math.random() * Math.PI * 2;
+                        u.vx = Math.cos(angle) * u.spd;
+                        u.vy = Math.sin(angle) * u.spd;
+                    }
+
+                    // MOUVEMENT (Uniquement si non paralysé)
+                    u.x += u.vx; 
+                    u.y += u.vy;
+
                     // REBONDS MURS
                     if(u.x <= 0) { u.x = 2; u.vx = u.spd; }
                     else if(u.x >= ARENA_W - UNIT_SIZE) { u.x = ARENA_W - UNIT_SIZE - 2; u.vx = -u.spd; }
@@ -135,35 +150,40 @@
                     else if(u.y >= ARENA_H - UNIT_SIZE) { u.y = ARENA_H - UNIT_SIZE - 2; u.vy = -u.spd; }
                 }
 
-                // 3. COLLISION (Billard + Contagion Brûlure)
+                // 3. COLLISION (On les fait rebondir même s'ils sont paralysés pour éviter les empilements)
                 units.forEach(o => {
                     if(o === u || o.dead) return;
                     let dx = o.x - u.x, dy = o.y - u.y, dist = Math.sqrt(dx*dx + dy*dy);
                     if(dist < UNIT_SIZE - 5) {
                         let angle = Math.atan2(dy, dx);
+                        // Rebond simple
                         u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
                         o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
-                        // Contagion
+                        
+                        // Contagion Brûlure
                         if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
+                        
+                        // Anti-chevauchement immédiat
+                        if(!u.isParalyzed) { u.x -= Math.cos(angle) * 2; u.y -= Math.sin(angle) * 2; }
                     }
                 });
 
-                // 4. TICKS (Poison / Brûlure)
+                // 4. TICKS (Dégâts sur la durée)
                 if(Date.now() - u.lastTick > 1000) {
                     if(u.poisonTicks > 0) { u.hp -= 5; u.poisonTicks--; showFx(u, "🤢", "#4ecb71"); }
                     if(u.burnTicks > 0) { u.hp -= 8; u.burnTicks--; showFx(u, "🔥", "#ff5f00"); }
                     u.lastTick = Date.now();
                 }
 
-                // 5. BERSERK
-                if(u.power.startsWith("berserk")) {
+                // 5. BERSERK FX
+                if(u.power && u.power.startsWith("berserk")) {
                     if(u.hp < u.maxHp * 0.4) {
                         u.atk = u.baseAtk * (1 + getTier(u.power)*0.4);
                         u.berserkEl.style.display = "block";
                     } else { u.atk = u.baseAtk; u.berserkEl.style.display = "none"; }
                 }
 
-                // 6. COMBAT
+                // 6. COMBAT IA
                 let enemies = units.filter(e => !e.dead && e.team !== u.team);
                 let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
                 if(target && getDist(u, target) <= u.range && !u.isParalyzed) {
