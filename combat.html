@@ -2,132 +2,320 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GachaHB | Collection Royale</title>
+    <title>GachaHB | Grande Arène de Combat</title>
     <style>
         :root { 
-            --bg: #202225; --card-bg: #2f3136; --text: #ffffff; --accent: #5865f2; 
-            --common: #b9bbbe; --rare: #43b581; --legend: #faa61a; --mythic: #f04747; --oracle: #ffee00; --secret: #eb459e;
+            --bg: #1a1b1e; 
+            --arena-bg: #2f3136; 
+            --accent: #5865f2; 
+            --enemy: #f04747; 
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        h1 { margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-
-        .search-box { background: var(--card-bg); padding: 25px; border-radius: 15px; display: inline-block; margin-bottom: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        input { padding: 12px; border-radius: 8px; border: none; width: 250px; font-size: 16px; margin-right: 10px; }
-        button { padding: 12px 25px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
-        button:hover { background: #4752c4; transform: scale(1.05); }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; max-width: 1300px; margin: 0 auto; }
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
         
-        .card { 
-            background: var(--card-bg); border-radius: 12px; padding: 15px; border: 1px solid #444; 
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; 
-        }
-        .card:hover { transform: scale(1.03); border-color: var(--accent); box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); }
-
-        .card img { 
-            width: 100%; height: 280px; object-fit: contain; border-radius: 8px; 
-            background: #18191c; margin-bottom: 15px;
-        }
-
-        .card-name { font-size: 16px; font-weight: bold; margin-bottom: 8px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+        #battle-ui { padding: 15px; }
         
-        .badge { font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; margin-bottom: 5px; color: #000; }
-        .collection-tag { font-size: 10px; color: #b9bbbe; font-style: italic; margin-top: 5px; }
+        /* GRANDE ARÈNE */
+        #arena { 
+            width: 1200px; 
+            height: 700px; 
+            background: var(--arena-bg); 
+            margin: 0 auto; 
+            position: relative; 
+            border: 6px solid #444; 
+            border-radius: 12px;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
 
-        /* Couleurs des raretés */
-        .rarete-commun { background: var(--common); }
-        .rarete-rare { background: var(--rare); color: white; }
-        .rarete-legendaire { background: var(--legend); color: white; }
-        .rarete-mythique { background: var(--mythic); color: white; }
-        .rarete-oracle { background: var(--oracle); box-shadow: 0 0 10px #ffee00; }
-        .rarete-secret { background: var(--secret); color: white; box-shadow: 0 0 10px #eb459e; }
+        /* UNITÉS */
+        .unit { 
+            width: 65px; 
+            height: 65px; 
+            position: absolute; 
+            background-size: cover; 
+            background-position: center; 
+            border-radius: 10px;
+            z-index: 2; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .team-player { border: 3px solid var(--accent); }
+        .team-enemy { border: 3px solid var(--enemy); }
 
-        .status { margin-bottom: 20px; font-size: 18px; }
+        /* INTERFACE UNITÉ */
+        .hp-container { 
+            position: absolute; 
+            top: -18px; 
+            left: 0; 
+            width: 100%; 
+            height: 7px; 
+            background: #000; 
+            border-radius: 4px; 
+            overflow: hidden;
+            border: 1px solid #111;
+        }
+        .hp-bar { height: 100%; background: #43b581; width: 100%; transition: width 0.3s; }
+        .unit-name { 
+            position: absolute; 
+            bottom: -25px; 
+            width: 140px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            text-shadow: 1px 1px 3px black;
+            pointer-events: none;
+        }
+
+        /* PROJECTILES */
+        .bullet { 
+            position: absolute; 
+            width: 12px; 
+            height: 12px; 
+            background: #fff176; 
+            border-radius: 50%; 
+            z-index: 10; 
+            box-shadow: 0 0 10px #ffa000; 
+        }
+
+        /* LOGS */
+        .log-box { 
+            width: 1200px; 
+            height: 80px; 
+            background: rgba(0,0,0,0.8); 
+            margin: 15px auto; 
+            border-radius: 8px; 
+            padding: 10px; 
+            overflow-y: auto; 
+            text-align: left;
+            font-family: 'Courier New', monospace; 
+            color: #00ff00; 
+            border: 1px solid #333;
+            font-size: 14px;
+        }
+
+        button { 
+            padding: 12px 40px; 
+            font-size: 20px; 
+            background: var(--accent); 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.3s;
+        }
+        button:hover { background: #4752c4; transform: translateY(-2px); }
+        button:disabled { background: #444; cursor: not-allowed; transform: none; }
     </style>
 </head>
 <body>
 
-    <h1>📜 GachaHB : Galerie des Joueurs</h1>
-    
-    <div class="search-box">
-        <input type="text" id="username" placeholder="Pseudo Discord (ex: Bob)">
-        <button onclick="displayCollection()">Ouvrir le grimoire</button>
+    <div id="battle-ui">
+        <h1>⚔️ GRANDE ARÈNE GACHAHB ⚔️</h1>
+        <button id="start-btn" onclick="initBattle()">ENTRER DANS LA MÊLÉE</button>
     </div>
 
-    <div id="status" class="status"></div>
-    <div id="collectionGrid" class="grid"></div>
+    <div id="arena"></div>
+
+    <div class="log-box" id="logs">
+        > En attente du signal de combat...
+    </div>
 
     <script>
-        async function displayCollection() {
-            const searchName = document.getElementById('username').value.trim().toLowerCase();
-            const grid = document.getElementById('collectionGrid');
-            const status = document.getElementById('status');
+        let units = [];
+        let battleActive = false;
+        let loop;
+        const UNIT_SIZE = 65;
+        const ARENA_W = 1200;
+        const ARENA_H = 700;
 
-            if (!searchName) return;
-            grid.innerHTML = "";
-            status.innerText = "⏳ Lecture des parchemins...";
+        async function initBattle() {
+            const btn = document.getElementById('start-btn');
+            const arena = document.getElementById('arena');
+            const logBox = document.getElementById('logs');
+            
+            arena.innerHTML = "";
+            logBox.innerHTML = "> Initialisation du terrain de guerre...<br>";
+            units = [];
+            btn.disabled = true;
 
             try {
                 const cb = "?t=" + Date.now();
-                
-                // 1. Charger les pseudos
-                const resNames = await fetch('./noms.json' + cb);
-                const namesData = await resNames.json();
+                const [resShop, resStats, resArmies] = await Promise.all([
+                    fetch('shop.json' + cb), fetch('stats.json' + cb), fetch('armies.json' + cb)
+                ]);
 
-                let userId = null;
-                for (let id in namesData) {
-                    if (namesData[id].toLowerCase() === searchName) {
-                        userId = id;
-                        break;
-                    }
-                }
+                const shop = await resShop.json();
+                const stats = await resStats.json();
+                const armies = await resArmies.json();
 
-                if (!userId) {
-                    status.innerText = "❌ Ce voyageur est inconnu.";
-                    return;
-                }
+                const playerArmyIds = JSON.parse(localStorage.getItem('myGachaArmy'));
+                if (!playerArmyIds) return alert("Crée ton armée d'abord !");
 
-                // 2. Charger les cartes possédées
-                const resUser = await fetch('./user_cards.json' + cb);
-                const userCards = await resUser.json();
-                const myIds = userCards[userId] || [];
+                const armyKeys = Object.keys(armies);
+                const enemy = armies[armyKeys[Math.floor(Math.random() * armyKeys.length)]];
 
-                // 3. Charger la base de données shop.json
-                const resShop = await fetch('./shop.json' + cb);
-                const shopData = await resShop.json();
+                // Spawn : Joueur à gauche (200px), Ennemi à droite (1000px)
+                setupUnits(playerArmyIds, shop, stats, 200, 'team-player');
+                setupUnits(enemy.units, shop, stats, 1000, 'team-enemy');
 
-                if (myIds.length === 0) {
-                    status.innerText = "📭 Ce joueur ne possède aucune carte.";
-                    return;
-                }
-
-                status.innerText = `✨ Collection de ${namesData[userId]} (${myIds.length} cartes)`;
-
-                myIds.forEach(id => {
-                    const info = shopData[id];
-                    if (!info) return;
-
-                    const cardDiv = document.createElement('div');
-                    cardDiv.className = 'card';
-                    
-                    const rareteClass = "rarete-" + info.rarete.toLowerCase();
-                    let finalPath = info.img.startsWith("Carte/") ? info.img : "Carte/" + info.img;
-
-                    cardDiv.innerHTML = `
-                        <img src="${finalPath}" onerror="this.src='https://via.placeholder.com/200x300?text=Image+Perdue'">
-                        <div class="badge ${rareteClass}">${info.rarete}</div>
-                        <div class="card-name">${info.nom}</div>
-                        <div class="collection-tag">Série: ${info.collection}</div>
-                        <div style="font-size:9px; color:#555; margin-top:5px;">ID: ${id}</div>
-                    `;
-                    grid.appendChild(cardDiv);
-                });
+                logBox.innerHTML += `> Duel engagé contre <b>${enemy.pseudo}</b> !<br>`;
+                battleActive = true;
+                startLoop();
 
             } catch (err) {
-                status.innerText = "⚠️ Erreur de chargement. Le Bot a-t-il créé shop.json ?";
                 console.error(err);
+                btn.disabled = false;
             }
+        }
+
+        function setupUnits(ids, shop, stats, startX, team) {
+            ids.forEach((id) => {
+                const card = shop[id];
+                if (!card) return;
+                const s = stats[id] || { hp: 100, atk: 15, rng: 2 };
+                
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2.5;
+
+                const unitData = {
+                    id: id, name: card.nom, team: team, 
+                    hp: s.hp, maxHp: s.hp, atk: s.atk,
+                    range: s.rng * 80, // Portée adaptée à la grande arène
+                    x: startX + (Math.random() * 50 - 25),
+                    y: Math.floor(Math.random() * (ARENA_H - 100)) + 50,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    lastAtk: 0,
+                    img: card.img.startsWith("Carte/") ? card.img : "Carte/" + card.img
+                };
+
+                const el = document.createElement('div');
+                el.className = `unit ${team}`;
+                el.style.backgroundImage = `url('${unitData.img}')`;
+                if(team === 'team-enemy') el.style.transform = "scaleX(-1)";
+                
+                el.innerHTML = `
+                    <div class="hp-container"><div class="hp-bar"></div></div>
+                    <div class="unit-name">${unitData.name}</div>
+                `;
+                
+                document.getElementById('arena').appendChild(el);
+                unitData.el = el;
+                unitData.hpBar = el.querySelector('.hp-bar');
+                units.push(unitData);
+                updatePos(unitData);
+            });
+        }
+
+        function startLoop() {
+            clearInterval(loop);
+            loop = setInterval(() => {
+                if (!battleActive) return;
+
+                units.forEach(u => {
+                    if (u.hp <= 0) return;
+
+                    // 1. CIBLAGE
+                    let enemies = units.filter(en => en.team !== u.team && en.hp > 0);
+                    let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
+
+                    if (target && getDist(u, target) <= u.range) {
+                        // Arrêt pour attaquer
+                        u.vx *= 0.7; u.vy *= 0.7;
+                        if (Date.now() - u.lastAtk > 1100) {
+                            attack(u, target);
+                            u.lastAtk = Date.now();
+                        }
+                    } else {
+                        // Reprise de vitesse si trop lent
+                        if(Math.abs(u.vx) < 0.8) u.vx = (Math.random() - 0.5) * 4;
+                        if(Math.abs(u.vy) < 0.8) u.vy = (Math.random() - 0.5) * 4;
+                    }
+
+                    // 2. PHYSIQUE
+                    u.x += u.vx; u.y += u.vy;
+
+                    // Rebond Murs
+                    if (u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) u.vx *= -1;
+                    if (u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) u.vy *= -1;
+
+                    // Rebond entre Persos
+                    units.forEach(other => {
+                        if (other === u || other.hp <= 0) return;
+                        let d = getDist(u, other);
+                        if (d < UNIT_SIZE - 5) {
+                            let tvx = u.vx; let tvy = u.vy;
+                            u.vx = other.vx; u.vy = other.vy;
+                            other.vx = tvx; other.vy = tvy;
+                            // Débloquer
+                            u.x -= (other.x - u.x) * 0.1;
+                        }
+                    });
+
+                    u.x = Math.max(0, Math.min(ARENA_W - UNIT_SIZE, u.x));
+                    u.y = Math.max(0, Math.min(ARENA_H - UNIT_SIZE, u.y));
+                    updatePos(u);
+                });
+
+                if(units.filter(u => u.team === 'team-player' && u.hp > 0).length === 0) endBattle('DÉFAITE');
+                if(units.filter(u => u.team === 'team-enemy' && u.hp > 0).length === 0) endBattle('VICTOIRE');
+
+            }, 30);
+        }
+
+        function attack(attacker, target) {
+            const b = document.createElement('div');
+            b.className = "bullet";
+            b.style.left = (attacker.x + 30) + "px";
+            b.style.top = (attacker.y + 30) + "px";
+            document.getElementById('arena').appendChild(b);
+
+            setTimeout(() => {
+                b.style.left = (target.x + 30) + "px";
+                b.style.top = (target.y + 30) + "px";
+                b.style.transition = "0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045)";
+            }, 20);
+
+            setTimeout(() => {
+                b.remove();
+                if (target.hp > 0) {
+                    target.hp -= attacker.atk;
+                    target.hpBar.style.width = Math.max(0, (target.hp / target.maxHp * 100)) + "%";
+                    if(target.hp <= 0) {
+                        target.el.style.opacity = "0.2";
+                        target.el.style.filter = "grayscale(1)";
+                    }
+                }
+            }, 270);
+        }
+
+        function updatePos(u) {
+            u.el.style.left = u.x + "px";
+            u.el.style.top = u.y + "px";
+        }
+
+        function getDist(a, b) {
+            return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+        }
+
+        function endBattle(res) {
+            battleActive = false;
+            clearInterval(loop);
+            document.getElementById('logs').innerHTML += `<br><b style="font-size:20px; color:yellow;">🏁 ${res}</b>`;
+            document.getElementById('start-btn').disabled = false;
         }
     </script>
 </body>
