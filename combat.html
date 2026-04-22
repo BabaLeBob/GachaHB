@@ -2,34 +2,27 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB | Arène de Combat</title>
+    <title>GachaHB | Arène de Combat Physiques</title>
     <style>
         :root { --bg: #202225; --arena-bg: #36393f; --accent: #5865f2; --enemy: #f04747; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        
         #battle-ui { padding: 20px; }
-        
-        /* L'ARÈNE */
         #arena { 
             width: 900px; height: 500px; background: var(--arena-bg); 
             margin: 0 auto; position: relative; border: 5px solid #444; border-radius: 10px;
             background-image: radial-gradient(#4f545c 1px, transparent 1px);
             background-size: 30px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden; /* Sécurité supplémentaire */
+            overflow: hidden;
         }
-
-        /* LES UNITÉS */
         .unit { 
             width: 60px; height: 60px; position: absolute; 
             background-size: cover; background-position: center; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             z-index: 2; box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            transition: left 0.1s linear, top 0.1s linear;
+            /* On enlève la transition CSS pour que la physique soit fluide */
         }
         .team-player { border: 3px solid var(--accent); }
         .team-enemy { border: 3px solid var(--enemy); }
-
-        /* BARRES DE VIE */
         .hp-container { 
             position: absolute; top: -15px; left: 0; width: 100%; height: 6px; 
             background: #000; border-radius: 3px; overflow: hidden;
@@ -37,12 +30,9 @@
         .hp-bar { height: 100%; background: #43b581; width: 100%; transition: width 0.2s; }
         .unit-name { 
             position: absolute; bottom: -22px; width: 120px; font-size: 11px; 
-            font-weight: bold; text-shadow: 1px 1px 2px black;
+            font-weight: bold; text-shadow: 1px 1px 2px black; pointer-events: none;
         }
-
-        /* PROJECTILES */
         .bullet { position: absolute; width: 10px; height: 10px; background: #fff176; border-radius: 50%; z-index: 10; box-shadow: 0 0 8px orange; }
-
         .log-box { 
             width: 900px; height: 100px; background: #000; margin: 15px auto; 
             border-radius: 8px; padding: 10px; overflow-y: auto; text-align: left;
@@ -53,7 +43,7 @@
             color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;
         }
         button:hover { background: #4752c4; transform: scale(1.05); }
-        button:disabled { background: #444; cursor: not-allowed; transform: none; }
+        button:disabled { background: #444; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -64,112 +54,87 @@
     </div>
 
     <div id="arena"></div>
-
-    <div class="log-box" id="logs">
-        > Système prêt. En attente d'un commandant...
-    </div>
+    <div class="log-box" id="logs"> > Système de collision chargé.</div>
 
     <script>
         let units = [];
         let battleActive = false;
         let loop;
+        const UNIT_SIZE = 60; // Taille des personnages
 
         async function initBattle() {
             const btn = document.getElementById('start-btn');
             const arena = document.getElementById('arena');
-            const logBox = document.getElementById('logs');
-            
             arena.innerHTML = "";
-            logBox.innerHTML = "> Analyse des fichiers tactiques...<br>";
             units = [];
             btn.disabled = true;
 
             try {
                 const cb = "?t=" + Date.now();
                 const [resShop, resStats, resArmies] = await Promise.all([
-                    fetch('shop.json' + cb),
-                    fetch('stats.json' + cb),
-                    fetch('armies.json' + cb)
+                    fetch('shop.json' + cb), fetch('stats.json' + cb), fetch('armies.json' + cb)
                 ]);
 
                 const shop = await resShop.json();
                 const stats = await resStats.json();
                 const armies = await resArmies.json();
 
-                // 1. Récupérer l'armée du joueur local
                 const playerArmyIds = JSON.parse(localStorage.getItem('myGachaArmy'));
-                if (!playerArmyIds || playerArmyIds.length === 0) {
-                    alert("⚠️ Armée vide ! Va sur army.html pour la créer.");
-                    btn.disabled = false;
-                    return;
-                }
+                if (!playerArmyIds || playerArmyIds.length === 0) return alert("Armée vide !");
 
-                // 2. Choisir un adversaire dans armies.json
                 const armyKeys = Object.keys(armies);
-                if (armyKeys.length === 0) throw new Error("Aucun adversaire disponible dans armies.json");
-                
                 const randomOppID = armyKeys[Math.floor(Math.random() * armyKeys.length)];
                 const enemyArmyIds = armies[randomOppID].units;
-                const enemyName = armies[randomOppID].pseudo;
 
-                logBox.innerHTML += `> Combat lancé contre <b>${enemyName}</b> !<br>`;
-
-                // 3. Placement (Joueur à gauche 100px, Ennemi à droite 750px)
+                // Placement sans superposition
                 setupUnits(playerArmyIds, shop, stats, 100, 'team-player');
                 setupUnits(enemyArmyIds, shop, stats, 750, 'team-enemy');
 
                 battleActive = true;
                 startLoop();
-
-            } catch (err) {
-                console.error(err);
-                logBox.innerHTML += "⚠️ ERREUR : " + err.message + "<br>";
-                btn.disabled = false;
-            }
+            } catch (err) { btn.disabled = false; }
         }
 
         function setupUnits(ids, shop, stats, startX, team) {
-            ids.forEach((id, i) => {
+            ids.forEach((id) => {
                 const card = shop[id];
                 if (!card) return;
-                
                 const s = stats[id] || { hp: 50, atk: 10, rng: 1 };
                 
-                // Spawn Aléatoire en hauteur (Y) entre 20 et 420
-                const randomY = Math.floor(Math.random() * 400) + 20;
+                // Chercher une position libre en Y
+                let randomY;
+                let collision;
+                let attempts = 0;
+                do {
+                    collision = false;
+                    randomY = Math.floor(Math.random() * 400) + 20;
+                    // On vérifie si une unité est déjà là
+                    for(let u of units) {
+                        if(Math.abs(u.y - randomY) < UNIT_SIZE && Math.abs(u.x - startX) < UNIT_SIZE) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    attempts++;
+                } while (collision && attempts < 50);
 
                 const unitData = {
-                    id: id,
-                    name: card.nom,
-                    team: team,
-                    hp: s.hp,
-                    maxHp: s.hp,
-                    atk: s.atk,
-                    range: s.rng * 55, // Distance d'attaque
-                    x: startX,
-                    y: randomY,
-                    lastAtk: 0,
+                    id: id, name: card.nom, team: team, hp: s.hp, maxHp: s.hp, atk: s.atk,
+                    range: s.rng * 55, x: startX, y: randomY, lastAtk: 0,
                     img: card.img.startsWith("Carte/") ? card.img : "Carte/" + card.img
                 };
 
                 const el = document.createElement('div');
                 el.className = `unit ${team}`;
                 el.style.backgroundImage = `url('${unitData.img}')`;
-                el.style.left = unitData.x + "px";
-                el.style.top = unitData.y + "px";
-                
-                // Les ennemis regardent à gauche
                 if(team === 'team-enemy') el.style.transform = "scaleX(-1)";
-
-                el.innerHTML = `
-                    <div class="hp-container"><div class="hp-bar"></div></div>
-                    <div class="unit-name">${unitData.name}</div>
-                `;
+                el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="unit-name">${unitData.name}</div>`;
                 
                 document.getElementById('arena').appendChild(el);
                 unitData.el = el;
                 unitData.hpBar = el.querySelector('.hp-bar');
                 units.push(unitData);
+                updateEl(unitData);
             });
         }
 
@@ -178,44 +143,60 @@
             loop = setInterval(() => {
                 if (!battleActive) return;
 
+                // 1. GESTION DES COLLISIONS (Rebond)
+                for (let i = 0; i < units.length; i++) {
+                    for (let j = i + 1; j < units.length; j++) {
+                        let u1 = units[i];
+                        let u2 = units[j];
+                        if (u1.hp <= 0 || u2.hp <= 0) continue;
+
+                        let dx = u2.x - u1.x;
+                        let dy = u2.y - u1.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        let minDistance = UNIT_SIZE - 5; // Un peu de marge pour le visuel
+
+                        if (distance < minDistance) {
+                            // Rebond : on pousse les deux unités dans des directions opposées
+                            let overlap = minDistance - distance;
+                            let nx = dx / distance; 
+                            let ny = dy / distance;
+                            let moveX = nx * overlap / 2;
+                            let moveY = ny * overlap / 2;
+
+                            u1.x -= moveX; u1.y -= moveY;
+                            u2.x += moveX; u2.y += moveY;
+                        }
+                    }
+                }
+
+                // 2. IA ET DÉPLACEMENT
                 units.forEach(u => {
                     if (u.hp <= 0) return;
 
                     let targets = units.filter(en => en.team !== u.team && en.hp > 0);
-                    if (targets.length === 0) {
-                        endBattle(u.team);
-                        return;
-                    }
+                    if (targets.length === 0) return endBattle(u.team);
 
-                    // Cible la plus proche
                     let target = targets.sort((a, b) => getDist(u, a) - getDist(u, b))[0];
                     let d = getDist(u, target);
 
                     if (d > u.range) {
-                        // MOUVEMENT
                         let speed = 2.0;
-                        let moveX = (target.x > u.x ? 1 : -1) * speed;
-                        let moveY = (target.y > u.y ? 1 : -1) * speed;
-
-                        // Vérification des limites de l'arène (900x500)
-                        let newX = u.x + moveX;
-                        let newY = u.y + moveY;
-
-                        if (newX >= 10 && newX <= 830) u.x = newX;
-                        if (newY >= 10 && newY <= 430) u.y = newY;
-
-                        u.el.style.left = u.x + "px";
-                        u.el.style.top = u.y + "px";
+                        u.x += (target.x > u.x ? 1 : -1) * speed;
+                        u.y += (target.y > u.y ? 1 : -1) * speed;
                     } else {
-                        // ATTAQUE
                         let now = Date.now();
-                        if (now - u.lastAtk > 1200) { // Vitesse d'attaque
+                        if (now - u.lastAtk > 1200) {
                             performAttack(u, target);
                             u.lastAtk = now;
                         }
                     }
+
+                    // Limites Arène
+                    u.x = Math.max(0, Math.min(840, u.x));
+                    u.y = Math.max(0, Math.min(440, u.y));
+                    updateEl(u);
                 });
-            }, 50);
+            }, 30); // Plus rapide (30ms) pour une physique fluide
         }
 
         function performAttack(attacker, target) {
@@ -225,7 +206,6 @@
             bullet.style.top = (attacker.y + 25) + "px";
             document.getElementById('arena').appendChild(bullet);
 
-            // Animation projectile
             setTimeout(() => {
                 bullet.style.left = (target.x + 25) + "px";
                 bullet.style.top = (target.y + 25) + "px";
@@ -235,18 +215,18 @@
             setTimeout(() => {
                 bullet.remove();
                 if (target.hp <= 0) return;
-
                 target.hp -= attacker.atk;
-                let pct = (target.hp / target.maxHp) * 100;
-                target.hpBar.style.width = Math.max(0, pct) + "%";
-
+                target.hpBar.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + "%";
                 if (target.hp <= 0) {
                     target.el.style.opacity = "0.2";
                     target.el.style.filter = "grayscale(1)";
-                    document.getElementById('logs').innerHTML += `> 💀 <b>${target.name}</b> est vaincu.<br>`;
-                    document.getElementById('logs').scrollTop = 9999;
                 }
             }, 220);
+        }
+
+        function updateEl(u) {
+            u.el.style.left = u.x + "px";
+            u.el.style.top = u.y + "px";
         }
 
         function getDist(a, b) {
@@ -256,8 +236,7 @@
         function endBattle(winTeam) {
             battleActive = false;
             clearInterval(loop);
-            const msg = winTeam === 'team-player' ? "🎉 VICTOIRE !" : "💀 DÉFAITE...";
-            document.getElementById('logs').innerHTML += `<br><b style="font-size:18px; color:white;">${msg}</b><br>`;
+            document.getElementById('logs').innerHTML += `<br>🎉 Fin de combat : ${winTeam === 'team-player' ? 'VICTOIRE' : 'DÉFAITE'}`;
             document.getElementById('start-btn').disabled = false;
         }
     </script>
