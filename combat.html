@@ -152,15 +152,34 @@
                     if (u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) u.vx *= -1;
                     if (u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) u.vy *= -1;
 
-                    // Rebond entre personnages (avec transfert de force selon vitesse)
+                    // 5. REBONDS ENTRE PERSONNAGES (Correctif Vitesse Perso)
                     units.forEach(other => {
                         if (other === u || other.hp <= 0) return;
                         let d = getDist(u, other);
+                        
                         if (d < UNIT_SIZE - 5) {
+                            // 1. On échange les directions (Vecteurs)
                             let tvx = u.vx; let tvy = u.vy;
                             u.vx = other.vx; u.vy = other.vy;
                             other.vx = tvx; other.vy = tvy;
-                            u.x -= (other.x - u.x) * 0.1; // Évite de coller
+
+                            // 2. RE-NORMALISATION : On force les vitesses à respecter la stat 'moveSpeed' de chacun
+                            // Pour l'unité U
+                            let magU = Math.sqrt(u.vx**2 + u.vy**2) || 1;
+                            u.vx = (u.vx / magU) * u.moveSpeed;
+                            u.vy = (u.vy / magU) * u.moveSpeed;
+
+                            // Pour l'unité OTHER
+                            let magO = Math.sqrt(other.vx**2 + other.vy**2) || 1;
+                            other.vx = (other.vx / magO) * other.moveSpeed;
+                            other.vy = (other.vy / magO) * other.moveSpeed;
+
+                            // 3. Anti-fusion : On les écarte un peu pour éviter qu'ils restent collés
+                            let overlap = (UNIT_SIZE - 5) - d;
+                            let nx = (other.x - u.x) / d;
+                            let ny = (other.y - u.y) / d;
+                            u.x -= nx * overlap / 2;
+                            u.y -= ny * overlap / 2;
                         }
                     });
 
