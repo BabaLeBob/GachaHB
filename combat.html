@@ -2,19 +2,19 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB | Arène Battle Tier</title>
+    <title>GachaHB | Battle System v3</title>
     <style>
         :root { --bg: #1a1b1e; --arena-bg: #2f3136; --accent: #5865f2; --enemy: #f04747; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; overflow: hidden; }
         #arena { 
-            width: 1200px; height: 700px; background: var(--arena-bg); margin: 10px auto; 
+            width: 1200px; height: 700px; background: var(--arena-bg); margin: 15px auto; 
             position: relative; border: 5px solid #444; border-radius: 12px; overflow: hidden;
             background-image: radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px); background-size: 40px 40px;
         }
         .unit { 
             width: 65px; height: 65px; position: absolute; background-size: cover; background-position: center;
             border-radius: 10px; z-index: 2; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: filter 0.1s;
         }
         .team-player { border: 3px solid var(--accent); }
         .team-enemy { border: 3px solid var(--enemy); }
@@ -29,8 +29,7 @@
 </head>
 <body>
 
-    <h1>⚔️ ARENA : TIERS POUVOIRS ⚔️</h1>
-    <button id="start-btn" onclick="initBattle()">LANCER LE COMBAT</button>
+    <button id="start-btn" onclick="initBattle()">COMMENCER LE COMBAT</button>
     <div id="arena"></div>
 
     <script>
@@ -43,8 +42,7 @@
         function getTier(p) { return (!p || p === "none") ? 0 : parseInt(p.split('_').pop()); }
 
         async function initBattle() {
-            const arena = document.getElementById('arena');
-            arena.innerHTML = ""; units = [];
+            document.getElementById('arena').innerHTML = ""; units = [];
             const cb = "?t=" + Date.now();
             const [rShop, rStats, rArmies] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
             const shop = await rShop.json(), stats = await rStats.json(), armies = await rArmies.json();
@@ -62,31 +60,32 @@
         function spawnTeam(ids, shop, stats, x, team) {
             ids.forEach(id => {
                 const s = stats[id] || {hp:100, atk:15, rng:2, spd:2.5, as:1000, power:"none"};
-                const angle = Math.random() * Math.PI * 2;
-                const tier = getTier(s.power);
-                let moveSpd = s.spd;
-                if(s.power.startsWith("speed_boost")) moveSpd *= (1 + tier * 0.25);
-
-                const u = {
-                    id, team, hp: s.hp, maxHp: s.hp, atk: s.atk, baseAtk: s.atk,
-                    range: s.rng * 80, as: s.as, spd: moveSpd, power: s.power,
-                    x: x + (Math.random()*40-20), y: Math.random()*(ARENA_H-100)+50,
-                    vx: Math.cos(angle)*moveSpd, vy: Math.sin(angle)*moveSpd,
-                    lastAtk: 0, lastHeal: 0,
-                    img: cardImg(shop[id].img)
-                };
-
-                const el = document.createElement('div');
-                el.className = `unit ${team}`;
-                el.style.backgroundImage = `url('${u.img}')`;
-                el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="unit-name">${shop[id].nom}</div>`;
-                document.getElementById('arena').appendChild(el);
-                u.el = el; u.hpBar = el.querySelector('.hp-bar');
-                units.push(u);
+                createUnit(id, shop[id].nom, team, s, x, Math.random()*(ARENA_H-100)+50);
             });
         }
 
-        function cardImg(path) { return path.startsWith("Carte/") ? path : "Carte/"+path; }
+        function createUnit(id, nom, team, s, x, y, isClone = false) {
+            const angle = Math.random() * Math.PI * 2;
+            const u = {
+                id, nom, team, hp: s.hp, maxHp: s.hp, atk: s.atk, baseAtk: s.atk,
+                range: s.rng * 80, as: s.as, spd: s.spd, power: isClone ? "none" : s.power,
+                x, y, vx: Math.cos(angle)*s.spd, vy: Math.sin(angle)*s.spd,
+                lastAtk: 0, lastSpecial: Date.now(), isClone,
+                img: shopImg(id) // Note: shopImg doit être défini ou l'image passée
+            };
+            
+            // Pour l'image, on triche un peu pour simplifier le code autonome
+            const el = document.createElement('div');
+            el.className = `unit ${team}`;
+            if(isClone) el.style.opacity = "0.6";
+            el.style.backgroundImage = `url('Carte/${id}.png')`; // Ajuste selon ton renommage
+            el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="unit-name">${nom}</div>`;
+            document.getElementById('arena').appendChild(el);
+            u.el = el; u.hpBar = el.querySelector('.hp-bar');
+            units.push(u);
+        }
+
+        function shopImg(id) { return `Carte/${id}.png`; } // Fallback simple
 
         function startLoop() {
             clearInterval(loop);
@@ -96,39 +95,44 @@
                 units.forEach(u => {
                     if(u.hp <= 0) return;
 
-                    // 1. POUVOIRS PASSIFS
                     const tier = getTier(u.power);
-                    if(u.power.startsWith("berserk")) u.atk = (u.hp < u.maxHp*0.4) ? u.baseAtk*(1+tier*0.33) : u.baseAtk;
-                    if(u.power.startsWith("medic") && Date.now()-u.lastHeal > (4000-tier*500)) {
-                        let a = units.find(allie => allie.team === u.team && allie.hp > 0 && allie.hp < allie.maxHp);
-                        if(a) { a.hp = Math.min(a.maxHp, a.hp + tier*15); updateHP(a); u.lastHeal = Date.now(); }
+
+                    // POUVOIR : CLONE (Miroir)
+                    if(u.power.startsWith("clone") && Date.now() - u.lastSpecial > (11000 - tier * 2000)) {
+                        createUnit(u.id, `Reflet de ${u.nom}`, u.team, {hp: tier*20, atk:u.atk*0.5, rng:u.range/80, spd:u.spd, as:u.as, power:"none"}, u.x, u.y, true);
+                        u.lastSpecial = Date.now();
                     }
 
-                    // 2. IA / ATTAQUE
+                    // POUVOIR : BERSERK
+                    if(u.power.startsWith("berserk")) u.atk = (u.hp < u.maxHp*0.4) ? u.baseAtk*(1+tier*0.33) : u.baseAtk;
+
+                    // IA & CIBLAGE
                     let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
                     let target = enemies.sort((a,b) => getDist(u,a)-getDist(u,b))[0];
 
                     if(target && getDist(u, target) <= u.range) {
-                        u.vx *= 0.7; u.vy *= 0.7;
+                        u.vx *= 0.6; u.vy *= 0.6;
                         if(Date.now()-u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
                     } else {
                         let mag = Math.sqrt(u.vx**2 + u.vy**2);
                         if(mag < u.spd) { u.vx += (Math.random()-0.5); u.vy += (Math.random()-0.5); }
                     }
 
-                    // 3. PHYSIQUE & REBONDS
+                    // PHYSIQUE
                     u.x += u.vx; u.y += u.vy;
                     if(u.x <= 0 || u.x >= ARENA_W-UNIT_SIZE) u.vx *= -1;
                     if(u.y <= 0 || u.y >= ARENA_H-UNIT_SIZE) u.vy *= -1;
 
+                    // COLLISIONS (Correctif Vitesse)
                     units.forEach(other => {
                         if(other === u || other.hp <= 0) return;
                         let d = getDist(u, other);
                         if(d < UNIT_SIZE-5) {
                             let tvx = u.vx; u.vx = other.vx; other.vx = tvx;
                             let tvy = u.vy; u.vy = other.vy; other.vy = tvy;
-                            let magU = Math.sqrt(u.vx**2+u.vy**2)||1; u.vx=(u.vx/magU)*u.spd; u.vy=(u.vy/magU)*u.spd;
-                            u.x -= (other.x-u.x)*0.05;
+                            let mU = Math.sqrt(u.vx**2+u.vy**2)||1; u.vx=(u.vx/mU)*u.spd; u.vy=(u.vy/mU)*u.spd;
+                            let mO = Math.sqrt(other.vx**2+other.vy**2)||1; other.vx=(other.vx/mO)*other.spd; other.vy=(other.vy/mO)*other.spd;
+                            u.x -= (other.x-u.x)*0.1;
                         }
                     });
 
@@ -144,14 +148,28 @@
             const b = document.createElement('div'); b.className = "bullet";
             b.style.left = (u.x+25)+"px"; b.style.top = (u.y+25)+"px";
             document.getElementById('arena').appendChild(b);
+            
             setTimeout(() => { b.style.left = (t.x+25)+"px"; b.style.top = (t.y+25)+"px"; b.style.transition = "0.2s linear"; }, 20);
+            
             setTimeout(() => {
                 b.remove(); if(t.hp<=0) return;
                 let d = u.atk;
-                if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1+getTier(u.power)*0.5);
+                if(u.power.startsWith("sniper") && getDist(u,t) > 300) d *= (1+getTier(u.power)*0.5);
                 if(t.power.startsWith("tank")) d *= (1 - getTier(t.power)*0.2);
+                
                 t.hp -= d; 
                 if(u.power.startsWith("vampire")) { u.hp = Math.min(u.maxHp, u.hp + d*getTier(u.power)*0.15); updateHP(u); }
+                
+                // POUVOIR : CHAINE (Rebond)
+                if(u.power.startsWith("chain")) {
+                    let bounce = units.filter(e => e.team !== u.team && e.hp > 0 && e !== t && getDist(t, e) < 150).slice(0, getTier(u.power));
+                    bounce.forEach(targetB => { 
+                        targetB.hp -= d*0.5; updateHP(targetB); 
+                        targetB.el.style.filter = "brightness(3)"; setTimeout(()=>targetB.el.style.filter="none", 100);
+                        if(targetB.hp <= 0) die(targetB);
+                    });
+                }
+
                 updateHP(t);
                 if(t.hp <= 0) die(t);
             }, 220);
@@ -162,12 +180,14 @@
             if(u.power.startsWith("last_blast")) {
                 let tier = getTier(u.power);
                 const boom = document.createElement('div'); boom.className = "explosion";
-                boom.style.width = boom.style.height = (tier*80)+"px";
-                boom.style.left = (u.x - tier*20)+"px"; boom.style.top = (u.y - tier*20)+"px";
+                boom.style.width = boom.style.height = (tier*90)+"px";
+                boom.style.left = (u.x - tier*10)+"px"; boom.style.top = (u.y - tier*10)+"px";
                 document.getElementById('arena').appendChild(boom);
-                units.forEach(en => { if(en.team !== u.team && en.hp > 0 && getDist(u, en) < tier*80) { en.hp -= tier*30; updateHP(en); if(en.hp<=0) die(en); } });
+                units.forEach(en => { if(en.team !== u.team && en.hp > 0 && getDist(u, en) < tier*90) { en.hp -= tier*40; updateHP(en); if(en.hp<=0) die(en); } });
                 setTimeout(() => boom.remove(), 500);
             }
+            // Retirer de la liste après un délai pour libérer la mémoire (optionnel)
+            setTimeout(() => { u.hp = -999; }, 1000);
         }
 
         function updateHP(u) { u.hpBar.style.width = Math.max(0, (u.hp/u.maxHp*100))+"%"; }
@@ -175,7 +195,11 @@
         function checkEnd() {
             let p = units.filter(u => u.team === 'team-player' && u.hp > 0).length;
             let e = units.filter(u => u.team === 'team-enemy' && u.hp > 0).length;
-            if(p === 0 || e === 0) { battleActive = false; clearInterval(loop); alert(p === 0 ? "DÉFAITE" : "VICTOIRE"); }
+            if(battleActive && (p === 0 || e === 0)) { 
+                battleActive = false; clearInterval(loop); 
+                alert(p === 0 ? "DOMMAGE... DÉFAITE !" : "INCROYABLE ! VICTOIRE !"); 
+                document.getElementById('start-btn').disabled = false;
+            }
         }
     </script>
 </body>
