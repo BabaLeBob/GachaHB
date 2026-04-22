@@ -135,48 +135,75 @@
         function render() {
             const slotContainer = document.getElementById('army-slots');
             const reserveContainer = document.getElementById('reserve-container');
+            
             slotContainer.innerHTML = "";
             reserveContainer.innerHTML = "";
 
+            // 1. Rendu des 5 Slots (Haut)
             for(let i=0; i < MAX_SLOTS; i++) {
                 const slot = document.createElement('div');
                 slot.className = "slot";
+                
                 if(selectedArmy[i]) {
-                    slot.appendChild(createCard(selectedArmy[i], true));
+                    const id = selectedArmy[i];
+                    // On passe l'index pour être sûr de retirer la bonne carte
+                    slot.appendChild(createCard(id, true, i));
                 } else {
                     slot.innerHTML = `<span style="color:#333; font-size:12px;">SLOT VIDE</span>`;
                 }
-                slot.innerHTML += `<div class="slot-label">POSITION ${i+1}</div>`;
+                
+                const label = document.createElement('div');
+                label.className = "slot-label";
+                label.innerText = "POSITION " + (i+1);
+                slot.appendChild(label);
+                
                 slotContainer.appendChild(slot);
             }
 
+            // 2. Rendu de la réserve (Bas)
             userInventory.forEach(id => {
-                if(!selectedArmy.includes(id)) reserveContainer.appendChild(createCard(id, false));
+                // On n'affiche dans la réserve que si ce n'est PAS dans l'armée
+                if(!selectedArmy.includes(id)) {
+                    reserveContainer.appendChild(createCard(id, false));
+                }
             });
         }
 
-        function createCard(id, inArmy) {
+        function createCard(id, inArmy, index = -1) {
             const data = fullShop[id];
             const s = allStats[id] || {};
             if(!data) return document.createElement('div');
 
             const card = document.createElement('div');
             card.className = "card";
-            card.style.backgroundImage = `url('Carte/${data.img.replace('Carte/','')}')`;
+            let imgPath = data.img.startsWith("Carte/") ? data.img : "Carte/" + data.img;
+            card.style.backgroundImage = `url('${imgPath}')`;
 
-            card.onclick = () => {
-                if(inArmy) selectedArmy = selectedArmy.filter(sid => sid !== id);
-                else if(selectedArmy.length < MAX_SLOTS) selectedArmy.push(id);
-                render();
+            // --- LA LOGIQUE DE CLIC CORRIGÉE ---
+            card.onclick = (e) => {
+                e.stopPropagation(); // Évite les bugs de clics superposés
+                
+                if(inArmy) {
+                    // RETIRER : On enlève l'élément à cet index précis
+                    selectedArmy.splice(index, 1);
+                } else {
+                    // AJOUTER : Si place libre
+                    if(selectedArmy.length < MAX_SLOTS) {
+                        selectedArmy.push(id);
+                    } else {
+                        alert("Votre armée est pleine !");
+                    }
+                }
+                render(); // On redessine tout
             };
 
+            // Tooltip (reste identique)
             card.onmousemove = (e) => {
                 const tt = document.getElementById('tooltip');
                 tt.style.display = "block";
                 tt.style.left = (e.clientX + 15) + "px";
                 tt.style.top = (e.clientY + 15) + "px";
                 
-                // Nettoyage du nom du pouvoir pour la description (enlève le _1, _2...)
                 const rawPower = s.power || "none";
                 const powerKey = rawPower.split('_')[0] === "aura" ? "aura_stop" : rawPower.split('_')[0];
                 const desc = powerDetails[powerKey] || "Pouvoir inconnu.";
@@ -184,14 +211,12 @@
                 tt.innerHTML = `
                     <b style="color:#5865f2; font-size:1.1em;">${data.nom}</b><br>
                     <div style="margin:5px 0; border-top:1px solid #444; padding-top:5px;">
-                        ❤️ PV: <b>${s.hp}</b><br>
-                        ⚔️ ATK: <b>${s.atk}</b><br>
-                        🎯 Portée: <b>${s.rng}</b><br>
-                        ⚡ Vitesse: <b>${s.spd}</b><br>
+                        ❤️ PV: <b>${s.hp}</b> | ⚔️ ATK: <b>${s.atk}</b><br>
+                        🎯 RNG: <b>${s.rng}</b> | ⚡ SPD: <b>${s.spd}</b><br>
                         ⏱️ Cadence: <b>${s.as}ms</b>
                     </div>
-                    <div style="color:#ffcc00; font-size:0.9em; margin-top:8px; border-top:1px dashed #666; padding-top:5px;">
-                        <b>Pouvoir:</b> ${desc}
+                    <div style="color:#ffcc00; font-size:0.85em; margin-top:5px; border-top:1px dashed #666; padding-top:5px;">
+                        ${desc}
                     </div>
                 `;
             };
