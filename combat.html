@@ -14,11 +14,14 @@
 
         .unit { 
             width: 60px; height: 60px; position: absolute; 
-            /* Correction IMAGE : contain au lieu de cover pour respecter les ratios */
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            background-color: rgba(255,255,255,0.05); /* Fond léger pour voir la zone si l'image bug */
+            /* On force l'image à rester dans le cadre sans disparaître */
+            background-size: contain !important; 
+            background-repeat: no-repeat !important; 
+            background-position: center !important;
+            background-color: #3a3c42; /* Gris foncé si l'image ne charge pas */
             border-radius: 12px; border: 3px solid white;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2;
+            display: flex; align-items: center; justify-content: center;
         }
         .team-player { border-color: var(--p-color); }
         .team-enemy { border-color: var(--e-color); }
@@ -81,26 +84,41 @@
 
         function spawn(id, base, stat, x, y, team) {
             if(!base || !stat) return;
+            
             const u = {
                 id, team, x, y, hp: stat.hp, maxHp: stat.hp, atk: stat.atk, baseAtk: stat.atk,
                 range: stat.rng * 80, as: stat.as, spd: stat.spd, power: stat.power,
                 vx: (team === 'team-player' ? 1 : -1) * stat.spd, vy: (Math.random()-0.5) * stat.spd,
                 lastAtk: 0, lastTick: Date.now(), poisonTicks: 0, burnTicks: 0, isParalyzed: false,
-                dead: false // Nouveau flag de sécurité
+                dead: false
             };
 
             const el = document.createElement('div');
             el.className = `unit ${team}`;
-            let img = base.img.includes('/') ? base.img : 'Carte/' + base.img;
-            el.style.backgroundImage = `url('${img}')`;
-            el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="shield-fx"></div><div class="berserk-fx"></div>`;
+
+            // --- CORRECTION DU CHEMIN D'IMAGE ---
+            // On enlève "Carte/" si c'est déjà présent pour ne pas l'avoir en double
+            let cleanImgName = base.img.replace('Carte/', '');
+            let finalPath = 'Carte/' + cleanImgName;
+            
+            // Debug console pour vérifier les chemins (fais F12 en jeu pour voir)
+            console.log("Chargement unité:", id, "Image:", finalPath);
+            
+            el.style.backgroundImage = `url('${encodeURI(finalPath)}')`;
+            
+            el.innerHTML = `
+                <div class="hp-container"><div class="hp-bar"></div></div>
+                <div class="shield-fx"></div>
+                <div class="berserk-fx"></div>
+            `;
             
             document.getElementById('arena').appendChild(el);
             u.el = el;
             u.hpBar = el.querySelector('.hp-bar');
             u.shieldEl = el.querySelector('.shield-fx');
             u.berserkEl = el.querySelector('.berserk-fx');
-            if(u.power.startsWith("tank")) u.shieldEl.style.display = "block";
+            
+            if(u.power && u.power.startsWith("tank")) u.shieldEl.style.display = "block";
             
             units.push(u);
         }
@@ -118,13 +136,19 @@
                 let previouslyParalyzed = u.isParalyzed;
                 u.isParalyzed = false;
                 
-                units.forEach(owner => {
-                    if(!owner.dead && owner.team !== u.team && owner.power && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
-                        if(getDist(u, owner) < 150) {
-                            u.isParalyzed = true;
+                // RÈGLE : Si "u" possède lui-même le pouvoir Aura, il est immunisé
+                const isAuraUser = u.power && u.power.startsWith("aura_stop");
+
+                if (!isAuraUser) {
+                    units.forEach(owner => {
+                        // On vérifie que le lanceur est vivant, ennemi, et a activé son aura (PV < 50%)
+                        if(!owner.dead && owner.team !== u.team && owner.power && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
+                            if(getDist(u, owner) < 150) {
+                                u.isParalyzed = true;
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 if(u.isParalyzed) {
                     u.el.classList.add('paralyzed');
