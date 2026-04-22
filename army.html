@@ -1,64 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Mon Armée - GachaHB</title>
+    <meta charset="UTF-8">
+    <title>GachaHB - Mon Armée</title>
     <style>
-        body { background: #2f3136; color: white; font-family: sans-serif; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 20px; }
-        .card { border: 2px solid #444; padding: 5px; cursor: pointer; opacity: 0.6; }
-        .selected { border-color: #5865f2; opacity: 1; transform: scale(1.05); background: #40444b; }
-        img { width: 100%; height: 150px; object-fit: contain; }
+        body {
+            background: #1a1b1e;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 { color: #5865f2; text-shadow: 0 0 10px rgba(88, 101, 242, 0.5); }
+
+        #army-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .card {
+            width: 180px;
+            height: 260px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: #2f3136;
+            border: 3px solid #444;
+            border-radius: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            cursor: help;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: #5865f2;
+            box-shadow: 0 15px 30px rgba(88, 101, 242, 0.4);
+        }
+
+        /* Tooltip (Infobulle) */
+        #tooltip {
+            position: fixed;
+            display: none;
+            background: rgba(15, 15, 15, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #5865f2;
+            z-index: 1000;
+            pointer-events: none;
+            width: 260px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            text-align: left;
+            backdrop-filter: blur(5px);
+        }
+
+        .tt-title { 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            color: #5865f2; 
+            margin-bottom: 8px; 
+            border-bottom: 1px solid #444; 
+            padding-bottom: 5px;
+        }
+
+        .tt-stat { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 4px 0; 
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+
+        .tt-power-box {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px dashed #666;
+        }
+
+        .tt-power-name { color: #ffcc00; font-weight: bold; margin-bottom: 3px; }
+        .tt-power-desc { color: #ccc; font-size: 0.9em; font-style: italic; line-height: 1.3; }
+
+        .btn-back {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #444;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .btn-back:hover { background: #555; }
     </style>
 </head>
 <body>
-    <h1>🛡️ Compose ton Armée (5 cartes)</h1>
-    <input type="text" id="username" placeholder="Ton pseudo">
-    <button onclick="loadCollection()">Charger mes cartes</button>
-    <div id="grid" class="grid"></div>
-    <button onclick="saveArmy()" style="position:fixed; bottom:20px; right:20px; padding:20px; background:blue; color:white; border-radius:50px;">💾 SAUVEGARDER L'ARMÉE</button>
+
+    <a href="index.html" class="btn-back">⬅ Retour au Menu</a>
+    <h1>Bataillon Actuel</h1>
+    
+    <div id="army-container">
+        </div>
+
+    <div id="tooltip"></div>
 
     <script>
-        let myArmy = [];
-        async function loadCollection() {
-            const name = document.getElementById('username').value.toLowerCase();
-            const resNames = await fetch('noms.json');
-            const names = await resNames.json();
-            const userID = Object.keys(names).find(id => names[id].toLowerCase() === name);
-            
-            const resUser = await fetch('user_cards.json');
-            const userCards = await resUser.json();
-            const myCards = userCards[userID] || [];
+        // Dictionnaire des descriptions de pouvoirs
+        const powerDescriptions = {
+            "none": { n: "Aucun", d: "Cette unité n'a pas de capacité spéciale." },
+            "berserk": { n: "Berserk", d: "Augmente massivement l'attaque quand les PV sont bas." },
+            "tank": { n: "Tank", d: "Possède un bouclier qui réduit les dégâts reçus." },
+            "vampire": { n: "Vampire", d: "Récupère une partie des dégâts infligés sous forme de vie." },
+            "poison": { n: "Poison 🤢", d: "Inflige des dégâts toxiques sur la durée à chaque tir." },
+            "burn": { n: "Brûlure 🔥", d: "Enflamme l'ennemi. Le feu se transmet par contact aux alliés !" },
+            "aura_stop": { n: "Aura de Stase 💜", d: "Immobilise les ennemis proches si l'unité est blessée." },
+            "piercing": { n: "Perçant 🎯", d: "Ignore les boucliers des Tanks et leur inflige plus de dégâts." },
+            "frost": { n: "Givre 🧊", d: "Ralentit drastiquement la vitesse de déplacement de la cible." },
+            "knockback": { n: "Rétrograde", d: "Chaque projectile repousse violemment l'ennemi en arrière." },
+            "phalanx": { n: "Rempart 🏰", d: "Gagne de la résistance pour chaque allié situé à proximité." },
+            "turbo": { n: "Turbo 💨", d: "Devient de plus en plus rapide à chaque rebond effectué." },
+            "medic": { n: "Médic ✨", d: "Soigne continuellement les alliés dans une large zone autour de lui." },
+            "last_blast": { n: "Dernier Souffle 💣", d: "Provoque une énorme explosion à sa mort." },
+            "sniper": { n: "Sniper", d: "Inflige des dégâts bonus si la cible est éloignée." }
+        };
 
-            const resShop = await fetch('shop.json');
-            const shop = await resShop.json();
+        const tooltip = document.getElementById('tooltip');
 
-            const grid = document.getElementById('grid');
-            grid.innerHTML = "";
-            
-            myCards.forEach(id => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `<img src="Carte/${shop[id].img}"><br><small>${shop[id].nom}</small>`;
-                div.onclick = () => toggleCard(id, div);
-                grid.appendChild(div);
-            });
-        }
+        async function loadArmy() {
+            const cb = "?t=" + Date.now();
+            try {
+                const [rShop, rStats] = await Promise.all([
+                    fetch('shop.json' + cb),
+                    fetch('stats.json' + cb)
+                ]);
+                const shop = await rShop.json();
+                const stats = await rStats.json();
+                const myArmy = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
 
-        function toggleCard(id, el) {
-            if (myArmy.includes(id)) {
-                myArmy = myArmy.filter(i => i !== id);
-                el.classList.remove('selected');
-            } else if (myArmy.length < 5) {
-                myArmy.push(id);
-                el.classList.add('selected');
+                const container = document.getElementById('army-container');
+                container.innerHTML = "";
+
+                if (myArmy.length === 0) {
+                    container.innerHTML = "<h3>Ton armée est vide. Va au shop !</h3>";
+                    return;
+                }
+
+                myArmy.forEach(id => {
+                    const info = shop[id];
+                    const s = stats[id] || { hp:0, atk:0, rng:0, spd:0, as:0, power:"none" };
+                    if (!info) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    // Gestion du chemin d'image propre
+                    let imgPath = info.img.startsWith('Carte/') ? info.img : 'Carte/' + info.img;
+                    card.style.backgroundImage = `url('${encodeURI(imgPath)}')`;
+
+                    // Gestion du survol
+                    card.onmousemove = (e) => {
+                        tooltip.style.display = "block";
+                        tooltip.style.left = (e.clientX + 20) + "px";
+                        tooltip.style.top = (e.clientY + 10) + "px";
+
+                        // Extraction du nom du pouvoir pour la description
+                        let pId = s.power || "none";
+                        let basePower = pId.split('_').slice(0, -1).join('_') || pId; // enlève le _1, _2...
+                        if (pId.startsWith("aura_stop")) basePower = "aura_stop"; // Cas particulier
+                        
+                        let pData = powerDescriptions[basePower] || powerDescriptions["none"];
+                        let tier = pId.includes('_') ? " T" + pId.split('_').pop() : "";
+
+                        tooltip.innerHTML = `
+                            <div class="tt-title">${info.nom}</div>
+                            <div class="tt-stat"><span>Vie:</span> <b>${s.hp}</b></div>
+                            <div class="tt-stat"><span>Attaque:</span> <b>${s.atk}</b></div>
+                            <div class="tt-stat"><span>Portée:</span> <b>${s.rng}</b></div>
+                            <div class="tt-stat"><span>Vitesse:</span> <b>${s.spd}</b></div>
+                            <div class="tt-stat"><span>Vitesse Atk:</span> <b>${s.as}ms</b></div>
+                            <div class="tt-power-box">
+                                <div class="tt-power-name">Pouvoir : ${pData.n}${tier}</div>
+                                <div class="tt-power-desc">${pData.d}</div>
+                            </div>
+                        `;
+                    };
+
+                    card.onmouseleave = () => {
+                        tooltip.style.display = "none";
+                    };
+
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Erreur de chargement:", err);
             }
         }
 
-        function saveArmy() {
-            if(myArmy.length !== 5) return alert("Il faut exactement 5 cartes !");
-            localStorage.setItem('myGachaArmy', JSON.stringify(myArmy));
-            alert("Armée enregistrée dans ton navigateur !");
-        }
+        loadArmy();
     </script>
 </body>
 </html>
