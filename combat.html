@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB - Ultimate Chaos Arena</title>
+    <title>GachaHB - Fix Final</title>
     <style>
         :root { --bg: #1a1b1e; --arena: #2f3136; --p-color: #5865f2; --e-color: #f04747; }
         body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
@@ -10,32 +10,36 @@
         #arena { 
             width: 1100px; height: 650px; background: var(--arena); margin: 15px auto; 
             position: relative; border: 5px solid #444; border-radius: 15px; overflow: hidden;
-            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 30px 30px;
         }
 
         .unit { 
-            width: 60px; height: 60px; position: absolute; background-size: cover; 
-            background-position: center; border-radius: 12px; border: 3px solid white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 2; transition: filter 0.3s;
+            width: 60px; height: 60px; position: absolute; 
+            /* Correction IMAGE : contain au lieu de cover pour respecter les ratios */
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            background-color: rgba(255,255,255,0.05); /* Fond léger pour voir la zone si l'image bug */
+            border-radius: 12px; border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2;
         }
         .team-player { border-color: var(--p-color); }
         .team-enemy { border-color: var(--e-color); }
 
-        /* EFFETS VISUELS */
         .hp-container { position: absolute; top: -15px; width: 100%; height: 6px; background: #000; border-radius: 3px; }
-        .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; transition: width 0.3s; }
+        .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; transition: width 0.2s; }
         
-        .shield-fx { position: absolute; width: 80px; height: 80px; border: 2px solid rgba(0, 191, 255, 0.6); border-radius: 50%; top: -13px; left: -13px; pointer-events: none; background: rgba(0, 191, 255, 0.1); display: none; animation: pulse 2s infinite; }
-        .berserk-fx { position: absolute; width: 100%; height: 100%; border-radius: 10px; box-shadow: 0 0 20px #ff0000; background: rgba(255, 0, 0, 0.2); display: none; }
-        .paralyzed { filter: brightness(0.5) sepia(1) hue-rotate(240deg) !important; }
+        /* État Paralysé (Aura Stase) */
+        .paralyzed { filter: brightness(0.4) saturate(0) blue; opacity: 0.8; border-style: dotted !important; }
         
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.7; } }
+        .shield-fx { position: absolute; width: 80px; height: 80px; border: 2px solid #00bfff; border-radius: 50%; top: -13px; left: -13px; pointer-events: none; background: rgba(0, 191, 255, 0.1); animation: pulse 2s infinite; display: none; }
+        .berserk-fx { position: absolute; width: 100%; height: 100%; box-shadow: 0 0 15px #ff0000; border-radius: 10px; display: none; animation: flash 0.5s infinite; }
         
-        .bullet { position: absolute; width: 10px; height: 10px; background: #fff176; border-radius: 50%; box-shadow: 0 0 10px orange; z-index: 5; }
-        .explosion { position: absolute; background: radial-gradient(circle, #ff5f00, transparent); border-radius: 50%; animation: blast 0.5s forwards; z-index: 1; }
-        @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(3.5); opacity: 0; } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(1); opacity: 0.3; } }
+        @keyframes flash { from { opacity: 0.2; } to { opacity: 0.5; } }
 
-        .effect-text { position: absolute; font-weight: bold; font-size: 22px; pointer-events: none; z-index: 10; animation: floatUp 0.8s forwards; }
+        .bullet { position: absolute; width: 10px; height: 10px; background: yellow; border-radius: 50%; box-shadow: 0 0 8px orange; z-index: 5; }
+        .explosion { position: absolute; background: radial-gradient(circle, orange, transparent); border-radius: 50%; animation: blast 0.5s forwards; z-index: 1; }
+        @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(4); opacity: 0; } }
+        
+        .effect-text { position: absolute; font-weight: bold; font-size: 20px; pointer-events: none; z-index: 20; animation: floatUp 0.8s forwards; }
         @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
 
         button { padding: 12px 25px; font-size: 18px; cursor: pointer; background: var(--p-color); color: white; border: none; border-radius: 5px; margin-top: 10px; }
@@ -43,7 +47,7 @@
 </head>
 <body>
 
-    <button onclick="initBattle()">LANCER LE COMBAT SUPRÊME</button>
+    <button onclick="initBattle()">LANCER LE COMBAT</button>
     <div id="arena"></div>
 
     <script>
@@ -59,17 +63,20 @@
             const arena = document.getElementById('arena');
             arena.innerHTML = ""; units = []; battleActive = false;
             const cb = "?t=" + Date.now();
-            const [rS, rSt, rA] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
-            const shop = await rS.json(), stats = await rSt.json(), armies = await rA.json();
             
-            const myArmyIds = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
-            const enemyArmy = armies[Object.keys(armies)[0]].units;
+            try {
+                const [rS, rSt, rA] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
+                const shop = await rS.json(), stats = await rSt.json(), armies = await rA.json();
+                
+                const myArmyIds = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
+                const enemyArmy = armies[Object.keys(armies)[0]].units;
 
-            myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 100, 100 + (i*90), 'team-player'));
-            enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 900, 100 + (i*90), 'team-enemy'));
+                myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 150, 100 + (i*90), 'team-player'));
+                enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 850, 100 + (i*90), 'team-enemy'));
 
-            battleActive = true;
-            requestAnimationFrame(update);
+                battleActive = true;
+                requestAnimationFrame(update);
+            } catch(e) { alert("Erreur de chargement des JSON ! Vérifie tes fichiers."); }
         }
 
         function spawn(id, base, stat, x, y, team) {
@@ -79,20 +86,16 @@
                 range: stat.rng * 80, as: stat.as, spd: stat.spd, power: stat.power,
                 vx: (team === 'team-player' ? 1 : -1) * stat.spd, vy: (Math.random()-0.5) * stat.spd,
                 lastAtk: 0, lastTick: Date.now(), poisonTicks: 0, burnTicks: 0, isParalyzed: false,
-                el: null, hpBar: null
+                dead: false // Nouveau flag de sécurité
             };
 
             const el = document.createElement('div');
             el.className = `unit ${team}`;
             let img = base.img.includes('/') ? base.img : 'Carte/' + base.img;
             el.style.backgroundImage = `url('${img}')`;
-            el.innerHTML = `
-                <div class="hp-container"><div class="hp-bar"></div></div>
-                <div class="shield-fx"></div>
-                <div class="berserk-fx"></div>
-            `;
-            document.getElementById('arena').appendChild(el);
+            el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="shield-fx"></div><div class="berserk-fx"></div>`;
             
+            document.getElementById('arena').appendChild(el);
             u.el = el;
             u.hpBar = el.querySelector('.hp-bar');
             u.shieldEl = el.querySelector('.shield-fx');
@@ -106,71 +109,73 @@
             if(!battleActive) return;
 
             units.forEach(u => {
-                if(u.hp <= 0) return;
+                if(u.dead) return;
 
-                // 1. DÉPLACEMENT & MURS (Physique corrigée)
-                if(!u.isParalyzed) {
+                // 1. GESTION DES MORT-VIVANTS (Sécurité HP)
+                if(u.hp <= 0) { die(u); return; }
+
+                // 2. POUVOIR : AURA DE STASE (Scan des ennemis proches)
+                u.isParalyzed = false;
+                units.forEach(owner => {
+                    if(!owner.dead && owner.team !== u.team && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
+                        if(getDist(u, owner) < 150) u.isParalyzed = true;
+                    }
+                });
+
+                if(u.isParalyzed) {
+                    u.el.classList.add('paralyzed');
+                } else {
+                    u.el.classList.remove('paralyzed');
+                    // MOUVEMENT
                     u.x += u.vx; u.y += u.vy;
+                    // REBONDS MURS
                     if(u.x <= 0) { u.x = 2; u.vx = u.spd; }
                     else if(u.x >= ARENA_W - UNIT_SIZE) { u.x = ARENA_W - UNIT_SIZE - 2; u.vx = -u.spd; }
                     if(u.y <= 0) { u.y = 2; u.vy = u.spd; }
                     else if(u.y >= ARENA_H - UNIT_SIZE) { u.y = ARENA_H - UNIT_SIZE - 2; u.vy = -u.spd; }
                 }
 
-                // 2. POUVOIR : AURA DE STASE (Immobilisation)
-                u.isParalyzed = false; // Reset avant scan
-                units.forEach(auraOwner => {
-                    if(auraOwner.hp > 0 && auraOwner.team !== u.team && auraOwner.power.startsWith("aura_stop") && auraOwner.hp < auraOwner.maxHp * 0.5) {
-                        if(getDist(u, auraOwner) < 160) {
-                            u.isParalyzed = true;
-                            u.vx = 0; u.vy = 0;
-                        }
+                // 3. COLLISION (Billard + Contagion Brûlure)
+                units.forEach(o => {
+                    if(o === u || o.dead) return;
+                    let dx = o.x - u.x, dy = o.y - u.y, dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < UNIT_SIZE - 5) {
+                        let angle = Math.atan2(dy, dx);
+                        u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
+                        o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
+                        // Contagion
+                        if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
                     }
                 });
-                u.isParalyzed ? u.el.classList.add('paralyzed') : u.el.classList.remove('paralyzed');
 
-                // 3. TICKS DE DÉGÂTS (Poison / Brûlure)
+                // 4. TICKS (Poison / Brûlure)
                 if(Date.now() - u.lastTick > 1000) {
                     if(u.poisonTicks > 0) { u.hp -= 5; u.poisonTicks--; showFx(u, "🤢", "#4ecb71"); }
                     if(u.burnTicks > 0) { u.hp -= 8; u.burnTicks--; showFx(u, "🔥", "#ff5f00"); }
                     u.lastTick = Date.now();
                 }
 
-                // 4. POUVOIR : BERSERK
+                // 5. BERSERK
                 if(u.power.startsWith("berserk")) {
                     if(u.hp < u.maxHp * 0.4) {
-                        u.atk = u.baseAtk * (1 + getTier(u.power)*0.33);
+                        u.atk = u.baseAtk * (1 + getTier(u.power)*0.4);
                         u.berserkEl.style.display = "block";
                     } else { u.atk = u.baseAtk; u.berserkEl.style.display = "none"; }
                 }
 
-                // 5. COLLISIONS (Billard + Contagion)
-                units.forEach(o => {
-                    if(o === u || o.hp <= 0) return;
-                    let dx = o.x - u.x, dy = o.y - u.y, dist = getDist(u, o);
-                    if(dist < UNIT_SIZE - 5) {
-                        let angle = Math.atan2(dy, dx);
-                        u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
-                        o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
-                        // Contagion Brûlure
-                        if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
-                        if(o.burnTicks > 0 && u.team === o.team) u.burnTicks = o.burnTicks;
-                    }
-                });
-
-                // 6. COMBAT IA
-                let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
+                // 6. COMBAT
+                let enemies = units.filter(e => !e.dead && e.team !== u.team);
                 let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
                 if(target && getDist(u, target) <= u.range && !u.isParalyzed) {
                     if(Date.now() - u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
                 }
 
+                // Appliquer Visuels
                 u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px";
-                u.hpBar.style.width = (Math.max(0, u.hp/u.maxHp*100)) + "%";
-                if(u.hp <= 0) die(u);
+                u.hpBar.style.width = Math.max(0, (u.hp / u.maxHp) * 100) + "%";
             });
 
-            checkGameOver();
+            checkWin();
             if(battleActive) requestAnimationFrame(update);
         }
 
@@ -179,11 +184,10 @@
             b.className = "bullet";
             b.style.left = (u.x+25)+"px"; b.style.top = (u.y+25)+"px";
             document.getElementById('arena').appendChild(b);
-            
             let start = Date.now(), dur = 250, sX = u.x+25, sY = u.y+25;
             function anim() {
                 let p = (Date.now() - start) / dur;
-                if(p >= 1) { b.remove(); hit(u, t); }
+                if(p >= 1 || t.dead) { b.remove(); if(!t.dead) hit(u, t); }
                 else {
                     b.style.left = (sX + (t.x+25 - sX) * p) + "px";
                     b.style.top = (sY + (t.y+25 - sY) * p) + "px";
@@ -194,61 +198,46 @@
         }
 
         function hit(u, t) {
-            if(t.hp <= 0) return;
             let d = u.atk;
             const uT = getTier(u.power), tT = getTier(t.power);
-
-            // Perçant vs Tank
-            if(u.power.startsWith("piercing")) {
-                if(t.power.startsWith("tank")) d *= (1 + uT * 0.2);
-            } else if(t.power.startsWith("tank")) d *= (1 - tT * 0.2);
-
-            // Sniper
-            if(u.power.startsWith("sniper") && getDist(u, t) > 250) d *= (1 + uT*0.5);
-
-            // Application Poison/Brûlure
-            if(u.power.startsWith("poison")) t.poisonTicks = 10;
-            if(u.power.startsWith("burn")) t.burnTicks = 10;
-
+            if(u.power.startsWith("piercing")) { if(t.power.startsWith("tank")) d *= (1 + uT*0.25); }
+            else if(t.power.startsWith("tank")) d *= (1 - tT*0.2);
+            if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1 + uT*0.5);
+            if(u.power.startsWith("poison")) t.poisonTicks = 5;
+            if(u.power.startsWith("burn")) t.burnTicks = 5;
             t.hp -= d;
-
-            // Vampire
-            if(u.power.startsWith("vampire")) {
-                let heal = d * (uT*0.15);
-                u.hp = Math.min(u.maxHp, u.hp + heal);
-                showFx(u, "+"+Math.round(heal), "#43b581");
-            }
+            if(u.power.startsWith("vampire")) u.hp = Math.min(u.maxHp, u.hp + (d*0.2));
         }
 
         function die(u) {
-            if(u.el.style.display === "none") return;
+            if(u.dead) return;
+            u.dead = true;
             u.el.style.display = "none";
             if(u.power.startsWith("last_blast")) {
-                const tier = getTier(u.power);
                 const ex = document.createElement('div');
                 ex.className = "explosion";
-                ex.style.width = ex.style.height = (tier*120)+"px";
-                ex.style.left = (u.x - tier*30)+"px"; ex.style.top = (u.y - tier*30)+"px";
+                ex.style.left = (u.x-60)+"px"; ex.style.top = (u.y-60)+"px";
+                ex.style.width = ex.style.height = (getTier(u.power)*120)+"px";
                 document.getElementById('arena').appendChild(ex);
-                units.forEach(o => { if(o.team !== u.team && o.hp > 0 && getDist(u, o) < tier*100) o.hp -= 40 * tier; });
+                units.forEach(o => { if(!o.dead && o.team !== u.team && getDist(u,o) < 150) o.hp -= 40; });
                 setTimeout(() => ex.remove(), 500);
             }
         }
 
-        function showFx(u, txt, color) {
+        function showFx(u, txt, col) {
             const f = document.createElement('div');
-            f.className = "effect-text"; f.style.color = color;
-            f.innerText = txt; f.style.left = u.x + "px"; f.style.top = u.y + "px";
+            f.className = "effect-text"; f.style.color = col; f.innerText = txt;
+            f.style.left = u.x + "px"; f.style.top = u.y + "px";
             document.getElementById('arena').appendChild(f);
             setTimeout(() => f.remove(), 800);
         }
 
-        function checkGameOver() {
-            const p = units.filter(u=>u.team==='team-player' && u.hp>0).length;
-            const e = units.filter(u=>u.team==='team-enemy' && u.hp>0).length;
+        function checkWin() {
+            const p = units.filter(u=>u.team==='team-player' && !u.dead).length;
+            const e = units.filter(u=>u.team==='team-enemy' && !u.dead).length;
             if(battleActive && (p === 0 || e === 0)) {
                 battleActive = false;
-                alert(p === 0 ? "DÉFAITE..." : "VICTOIRE !");
+                alert(p === 0 ? "DÉFAITE" : "VICTOIRE");
                 location.reload();
             }
         }
