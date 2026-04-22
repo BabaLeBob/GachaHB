@@ -65,13 +65,31 @@
     <script>
         let fullShop = {}; 
         let allStats = {}; 
-        let userInventory = []; // Cartes lues dans user_cards.json
-        let selectedArmy = []; // L'armée choisie
+        let userInventory = []; 
+        let selectedArmy = []; 
         let currentUser = "";
         let currentUserId = "";
         const MAX_SLOTS = 5;
 
-        // 1. CONNEXION ET RECHERCHE ID
+        // Dictionnaire complet des descriptions de pouvoirs
+        const powerDetails = {
+            "none": "Aucune capacité spéciale.",
+            "berserk": "Rage de combat : Augmente l'ATK de 40% quand les PV tombent sous la moitié.",
+            "tank": "Blindage lourd : Réduit tous les dégâts subis de 25%.",
+            "vampire": "Sangsue : Convertit 20% des dégâts infligés en soins pour soi-même.",
+            "poison": "Lame toxique : Inflige des dégâts de poison (5 PV/sec) pendant 3 secondes à l'impact.",
+            "burn": "Combustion : Enflamme l'ennemi. Le feu inflige 8 PV/sec et se propage aux alliés proches.",
+            "aura_stop": "Champ de stase : Immobilise totalement les ennemis proches si l'unité est sous 50% PV.",
+            "piercing": "Perçante : Ignore la réduction de dégâts des Tanks et leur inflige +25% de dégâts.",
+            "frost": "Gelure : Réduit la vitesse de déplacement de l'ennemi de 50% à chaque impact.",
+            "knockback": "Onde de choc : Repousse violemment l'ennemi en arrière à chaque tir réussi.",
+            "phalanx": "Lien de phalange : Gagne +20% de défense pour chaque allié situé à proximité immédiate.",
+            "turbo": "Post-combustion : Gagne un bonus de vitesse permanent à chaque fois qu'il rebondit.",
+            "medic": "Zone de soin : Diffuse une onde curative qui soigne les alliés proches de 10 PV/sec.",
+            "last_blast": "Dernier souffle : Provoque une détonation massive infligeant 100 dégâts à sa mort.",
+            "sniper": "Précision : Inflige des dégâts doublés si la cible se trouve à plus de 300px."
+        };
+
         async function login() {
             const input = document.getElementById('pseudo-input').value.trim().toLowerCase();
             const status = document.getElementById('login-status');
@@ -79,7 +97,6 @@
 
             try {
                 const cb = "?t=" + Date.now();
-                // Lire les pseudos
                 const resNames = await fetch('./noms.json' + cb);
                 const namesData = await resNames.json();
 
@@ -92,32 +109,19 @@
                 }
 
                 if (!currentUserId) {
-                    status.innerText = "❌ Pseudo inconnu dans la base de données.";
+                    status.innerText = "❌ Pseudo inconnu.";
                     return;
                 }
 
-                // Charger l'inventaire du joueur
                 const resUser = await fetch('./user_cards.json' + cb);
                 const userCards = await resUser.json();
                 userInventory = userCards[currentUserId] || [];
-
-                if (userInventory.length === 0) {
-                    status.innerText = "📭 Vous n'avez aucune carte !";
-                    return;
-                }
-
-                // Charger l'armée sauvegardée localement pour ce joueur
                 selectedArmy = JSON.parse(localStorage.getItem('army_' + currentUserId)) || [];
                 
                 document.getElementById('current-user').innerText = currentUser;
                 document.getElementById('login-overlay').style.display = "none";
-                
                 initGameData();
-
-            } catch (err) {
-                status.innerText = "⚠️ Erreur de chargement des JSON.";
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function initGameData() {
@@ -134,52 +138,62 @@
             slotContainer.innerHTML = "";
             reserveContainer.innerHTML = "";
 
-            // Rendu des 5 Slots
             for(let i=0; i < MAX_SLOTS; i++) {
                 const slot = document.createElement('div');
                 slot.className = "slot";
                 if(selectedArmy[i]) {
                     slot.appendChild(createCard(selectedArmy[i], true));
                 } else {
-                    slot.innerHTML = `<span style="color:#333; font-size:12px;">VIDE</span>`;
+                    slot.innerHTML = `<span style="color:#333; font-size:12px;">SLOT VIDE</span>`;
                 }
-                slot.innerHTML += `<div class="slot-label">POS ${i+1}</div>`;
+                slot.innerHTML += `<div class="slot-label">POSITION ${i+1}</div>`;
                 slotContainer.appendChild(slot);
             }
 
-            // Rendu de la réserve (Uniquement les cartes possédées et pas dans l'armée)
             userInventory.forEach(id => {
-                if(!selectedArmy.includes(id)) {
-                    reserveContainer.appendChild(createCard(id, false));
-                }
+                if(!selectedArmy.includes(id)) reserveContainer.appendChild(createCard(id, false));
             });
         }
 
         function createCard(id, inArmy) {
             const data = fullShop[id];
+            const s = allStats[id] || {};
             if(!data) return document.createElement('div');
 
             const card = document.createElement('div');
             card.className = "card";
-            let imgPath = data.img.startsWith("Carte/") ? data.img : "Carte/" + data.img;
-            card.style.backgroundImage = `url('${imgPath}')`;
+            card.style.backgroundImage = `url('Carte/${data.img.replace('Carte/','')}')`;
 
             card.onclick = () => {
-                if(inArmy) {
-                    selectedArmy = selectedArmy.filter(sid => sid !== id);
-                } else if(selectedArmy.length < MAX_SLOTS) {
-                    selectedArmy.push(id);
-                }
+                if(inArmy) selectedArmy = selectedArmy.filter(sid => sid !== id);
+                else if(selectedArmy.length < MAX_SLOTS) selectedArmy.push(id);
                 render();
             };
 
             card.onmousemove = (e) => {
                 const tt = document.getElementById('tooltip');
-                const s = allStats[id] || {};
                 tt.style.display = "block";
                 tt.style.left = (e.clientX + 15) + "px";
                 tt.style.top = (e.clientY + 15) + "px";
-                tt.innerHTML = `<b>${data.nom}</b><br>PV: ${s.hp} | ATK: ${s.atk}<br><small>${s.power || ''}</small>`;
+                
+                // Nettoyage du nom du pouvoir pour la description (enlève le _1, _2...)
+                const rawPower = s.power || "none";
+                const powerKey = rawPower.split('_')[0] === "aura" ? "aura_stop" : rawPower.split('_')[0];
+                const desc = powerDetails[powerKey] || "Pouvoir inconnu.";
+
+                tt.innerHTML = `
+                    <b style="color:#5865f2; font-size:1.1em;">${data.nom}</b><br>
+                    <div style="margin:5px 0; border-top:1px solid #444; padding-top:5px;">
+                        ❤️ PV: <b>${s.hp}</b><br>
+                        ⚔️ ATK: <b>${s.atk}</b><br>
+                        🎯 Portée: <b>${s.rng}</b><br>
+                        ⚡ Vitesse: <b>${s.spd}</b><br>
+                        ⏱️ Cadence: <b>${s.as}ms</b>
+                    </div>
+                    <div style="color:#ffcc00; font-size:0.9em; margin-top:8px; border-top:1px dashed #666; padding-top:5px;">
+                        <b>Pouvoir:</b> ${desc}
+                    </div>
+                `;
             };
             card.onmouseleave = () => { document.getElementById('tooltip').style.display = "none"; };
 
@@ -187,11 +201,9 @@
         }
 
         function saveArmy() {
-            // On sauvegarde l'armée spécifique à l'ID de l'utilisateur
             localStorage.setItem('army_' + currentUserId, JSON.stringify(selectedArmy));
-            // On met à jour l'armée active pour le combat
             localStorage.setItem('myGachaArmy', JSON.stringify(selectedArmy));
-            alert("✅ Armée de " + currentUser + " sauvegardée !");
+            alert("✅ Armée de " + currentUser + " enregistrée !");
         }
     </script>
 </body>
