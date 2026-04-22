@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB - Chaos Arena</title>
+    <title>GachaHB - Visual Chaos</title>
     <style>
         body { background: #1a1b1e; color: white; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
         #arena { 
@@ -17,17 +17,44 @@
         }
         .team-player { border-color: #5865f2; }
         .team-enemy { border-color: #f04747; }
+        
+        /* --- EFFETS VISUELS --- */
+        /* Bouclier Tank */
+        .shield-fx {
+            position: absolute; width: 80px; height: 80px; border: 2px solid rgba(0, 191, 255, 0.6);
+            border-radius: 50%; top: -13px; left: -13px; pointer-events: none;
+            background: rgba(0, 191, 255, 0.1); box-shadow: inset 0 0 15px rgba(0, 191, 255, 0.5);
+            animation: pulse-shield 2s infinite; display: none;
+        }
+        @keyframes pulse-shield { 0% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 0.4; } }
+
+        /* Aura Berserk */
+        .berserk-fx {
+            position: absolute; width: 60px; height: 60px; border-radius: 12px;
+            box-shadow: 0 0 20px #ff0000; background: rgba(255, 0, 0, 0.2);
+            top: 0; left: 0; pointer-events: none; display: none; animation: rage 0.5s infinite alternate;
+        }
+        @keyframes rage { from { opacity: 0.3; } to { opacity: 0.7; } }
+
+        /* Vampire Heal */
+        .vamp-fx {
+            position: absolute; color: #43b581; font-weight: bold; font-size: 20px;
+            pointer-events: none; animation: float-up 0.8s forwards; z-index: 10;
+        }
+        @keyframes float-up { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+
         .hp-container { position: absolute; top: -15px; width: 100%; height: 6px; background: #000; border-radius: 3px; }
-        .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; }
+        .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; transition: width 0.3s; }
         .bullet { position: absolute; width: 10px; height: 10px; background: #fff176; border-radius: 50%; box-shadow: 0 0 10px orange; z-index: 5; }
         .explosion { position: absolute; background: radial-gradient(circle, #ff5f00, transparent); border-radius: 50%; animation: blast 0.5s forwards; z-index: 1; }
         @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(3); opacity: 0; } }
+        
         button { padding: 12px 25px; font-size: 18px; cursor: pointer; background: #5865f2; color: white; border: none; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <button onclick="initBattle()">LANCER LE CHAOS</button>
+    <button onclick="initBattle()">LANCER LE CHAOS VISUEL</button>
     <div id="arena"></div>
 
     <script>
@@ -42,17 +69,13 @@
         async function initBattle() {
             const arena = document.getElementById('arena');
             arena.innerHTML = ""; units = []; battleActive = false;
-
             const cb = "?t=" + Date.now();
             const [rS, rSt, rA] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
             const shop = await rS.json(), stats = await rSt.json(), armies = await rA.json();
-
             const myArmyIds = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
             const enemyArmy = armies[Object.keys(armies)[0]].units;
 
-            // Spawn Joueurs
             myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 150, 100 + (i*100), 'team-player'));
-            // Spawn Ennemis
             enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 850, 100 + (i*100), 'team-enemy'));
 
             battleActive = true;
@@ -72,11 +95,23 @@
             el.className = `unit ${team}`;
             let img = base.img.includes('/') ? base.img : 'Carte/' + base.img;
             el.style.backgroundImage = `url('${img}')`;
-            el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div>`;
-            arena.appendChild(el);
             
+            // Ajout des conteneurs d'effets
+            el.innerHTML = `
+                <div class="hp-container"><div class="hp-bar"></div></div>
+                <div class="shield-fx"></div>
+                <div class="berserk-fx"></div>
+            `;
+            
+            document.getElementById('arena').appendChild(el);
             u.el = el;
             u.hpBar = el.querySelector('.hp-bar');
+            u.shieldEl = el.querySelector('.shield-fx');
+            u.berserkEl = el.querySelector('.berserk-fx');
+            
+            // Afficher bouclier permanent si Tank
+            if(u.power.startsWith("tank")) u.shieldEl.style.display = "block";
+            
             units.push(u);
         }
 
@@ -85,49 +120,49 @@
 
             units.forEach(u => {
                 if(u.hp <= 0) return;
-
                 const tier = getTier(u.power);
                 
-                // Effet Berserk
+                // Mouvement et Rebonds Murs
+                u.x += u.vx; u.y += u.vy;
+                if(u.x <= 0) { u.x = 2; u.vx = Math.abs(u.vx); }
+                else if(u.x >= ARENA_W - UNIT_SIZE) { u.x = ARENA_W - UNIT_SIZE - 2; u.vx = -Math.abs(u.vx); }
+                if(u.y <= 0) { u.y = 2; u.vy = Math.abs(u.vy); }
+                else if(u.y >= ARENA_H - UNIT_SIZE) { u.y = ARENA_H - UNIT_SIZE - 2; u.vy = -Math.abs(u.vy); }
+
+                // Berserk FX Check
                 if(u.power.startsWith("berserk")) {
-                    u.atk = (u.hp < u.maxHp * 0.4) ? u.baseAtk * (1 + tier*0.33) : u.baseAtk;
-                }
-
-                // Intelligence & Combat
-                let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
-                let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
-
-                if(target && getDist(u, target) <= u.range) {
-                    if(Date.now() - u.lastAtk > u.as) {
-                        shoot(u, target);
-                        u.lastAtk = Date.now();
+                    if(u.hp < u.maxHp * 0.4) {
+                        u.atk = u.baseAtk * (1 + tier*0.33);
+                        u.berserkEl.style.display = "block";
+                    } else {
+                        u.atk = u.baseAtk;
+                        u.berserkEl.style.display = "none";
                     }
                 }
 
-                // PHYSIQUE : Mouvement et Rebonds Murs
-                u.x += u.vx; u.y += u.vy;
-                if(u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) u.vx *= -1;
-                if(u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) u.vy *= -1;
+                // Combat IA
+                let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
+                let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
+                if(target && getDist(u, target) <= u.range) {
+                    if(Date.now() - u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
+                }
 
-                // Rebonds entre unités
+                // Collisions Unités
                 units.forEach(o => {
                     if(o === u || o.hp <= 0) return;
                     if(getDist(u, o) < UNIT_SIZE) {
-                        // Inversion des vitesses pour simuler un choc
                         let tx = u.vx; u.vx = o.vx; o.vx = tx;
                         let ty = u.vy; u.vy = o.vy; o.vy = ty;
-                        // Anti-chevauchement
-                        u.x -= u.vx; u.y -= u.vy;
+                        let angle = Math.atan2(u.y - o.y, u.x - o.x);
+                        u.x += Math.cos(angle) * 3; u.y += Math.sin(angle) * 3;
                     }
                 });
 
-                u.el.style.left = u.x + "px";
-                u.el.style.top = u.y + "px";
+                u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px";
             });
 
-            if(units.filter(u=>u.team==='team-player' && u.hp>0).length === 0) { battleActive=false; alert("PERDU..."); }
-            if(units.filter(u=>u.team==='team-enemy' && u.hp>0).length === 0) { battleActive=false; alert("GAGNÉ !"); }
-
+            if(units.filter(u=>u.team==='team-player' && u.hp>0).length === 0) end("DÉFAITE");
+            if(units.filter(u=>u.team==='team-enemy' && u.hp>0).length === 0) end("VICTOIRE");
             if(battleActive) requestAnimationFrame(update);
         }
 
@@ -137,16 +172,13 @@
             b.style.left = (u.x+25)+"px"; b.style.top = (u.y+25)+"px";
             document.getElementById('arena').appendChild(b);
 
-            let start = Date.now();
-            let duration = 250;
+            let start = Date.now(), duration = 250;
             let startX = u.x+25, startY = u.y+25;
 
             function anim() {
                 let p = (Date.now() - start) / duration;
-                if(p >= 1) {
-                    b.remove();
-                    hit(u, t);
-                } else {
+                if(p >= 1) { b.remove(); hit(u, t); }
+                else {
                     b.style.left = (startX + (t.x+25 - startX) * p) + "px";
                     b.style.top = (startY + (t.y+25 - startY) * p) + "px";
                     requestAnimationFrame(anim);
@@ -164,7 +196,13 @@
             if(t.power.startsWith("tank")) d *= (1 - tT*0.2);
 
             t.hp -= d;
-            if(u.power.startsWith("vampire")) u.hp = Math.min(u.maxHp, u.hp + d*(uT*0.15));
+            
+            // Vampire FX
+            if(u.power.startsWith("vampire")) {
+                let heal = d * (uT*0.15);
+                u.hp = Math.min(u.maxHp, u.hp + heal);
+                showVampireHeal(u, Math.round(heal));
+            }
 
             t.hpBar.style.width = (Math.max(0, t.hp/t.maxHp*100)) + "%";
             u.hpBar.style.width = (Math.max(0, u.hp/u.maxHp*100)) + "%";
@@ -173,6 +211,15 @@
                 t.el.style.display = "none";
                 if(t.power.startsWith("last_blast")) explode(t);
             }
+        }
+
+        function showVampireHeal(u, val) {
+            const v = document.createElement('div');
+            v.className = "vamp-fx";
+            v.innerText = "+" + val;
+            v.style.left = u.x + "px"; v.style.top = u.y + "px";
+            document.getElementById('arena').appendChild(v);
+            setTimeout(() => v.remove(), 800);
         }
 
         function explode(u) {
@@ -191,6 +238,8 @@
             });
             setTimeout(() => ex.remove(), 500);
         }
+
+        function end(m) { battleActive = false; alert(m); location.reload(); }
     </script>
 </body>
 </html>
