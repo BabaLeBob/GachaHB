@@ -2,230 +2,180 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB | Arène Tactique v2</title>
+    <title>GachaHB | Arène Battle Tier</title>
     <style>
         :root { --bg: #1a1b1e; --arena-bg: #2f3136; --accent: #5865f2; --enemy: #f04747; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; overflow-x: hidden; }
-        #battle-ui { padding: 15px; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; overflow: hidden; }
         #arena { 
-            width: 1200px; height: 700px; background: var(--arena-bg); 
-            margin: 0 auto; position: relative; border: 6px solid #444; border-radius: 12px;
-            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 40px 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); overflow: hidden;
+            width: 1200px; height: 700px; background: var(--arena-bg); margin: 10px auto; 
+            position: relative; border: 5px solid #444; border-radius: 12px; overflow: hidden;
+            background-image: radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px); background-size: 40px 40px;
         }
         .unit { 
-            width: 65px; height: 65px; position: absolute; background-size: cover; 
-            background-position: center; border-radius: 10px; z-index: 2; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            width: 65px; height: 65px; position: absolute; background-size: cover; background-position: center;
+            border-radius: 10px; z-index: 2; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .team-player { border: 3px solid var(--accent); }
         .team-enemy { border: 3px solid var(--enemy); }
-        .hp-container { position: absolute; top: -18px; left: 0; width: 100%; height: 7px; background: #000; border-radius: 4px; overflow: hidden; border: 1px solid #111; }
-        .hp-bar { height: 100%; background: #43b581; width: 100%; transition: width 0.3s; }
-        .unit-name { position: absolute; bottom: -25px; width: 140px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 3px black; pointer-events: none; }
-        .bullet { position: absolute; width: 12px; height: 12px; background: #fff176; border-radius: 50%; z-index: 10; box-shadow: 0 0 10px #ffa000; }
-        .log-box { width: 1200px; height: 80px; background: rgba(0,0,0,0.8); margin: 15px auto; border-radius: 8px; padding: 10px; overflow-y: auto; text-align: left; font-family: monospace; color: #00ff00; border: 1px solid #333; font-size: 14px; }
-        button { padding: 12px 40px; font-size: 20px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .hp-container { position: absolute; top: -18px; width: 100%; height: 6px; background: #000; border-radius: 3px; border: 1px solid #111; }
+        .hp-bar { height: 100%; background: #43b581; width: 100%; transition: width 0.2s; }
+        .unit-name { position: absolute; bottom: -22px; width: 150px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        .bullet { position: absolute; width: 12px; height: 12px; background: #fff176; border-radius: 50%; z-index: 10; box-shadow: 0 0 10px orange; }
+        .explosion { position: absolute; background: radial-gradient(circle, #ff5f00, transparent); border-radius: 50%; animation: blast 0.5s ease-out forwards; z-index: 5; }
+        @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(2.5); opacity: 0; } }
+        button { padding: 12px 30px; font-size: 18px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="battle-ui">
-        <h1>⚔️ ARÈNE TACTIQUE GACHAHB ⚔️</h1>
-        <button id="start-btn" onclick="initBattle()">LANCER LA SIMULATION</button>
-    </div>
-
+    <h1>⚔️ ARENA : TIERS POUVOIRS ⚔️</h1>
+    <button id="start-btn" onclick="initBattle()">LANCER LE COMBAT</button>
     <div id="arena"></div>
-    <div class="log-box" id="logs">> En attente des données de combat...</div>
 
     <script>
         let units = [];
         let battleActive = false;
         let loop;
         const UNIT_SIZE = 65;
-        const ARENA_W = 1200;
-        const ARENA_H = 700;
+        const ARENA_W = 1200, ARENA_H = 700;
+
+        function getTier(p) { return (!p || p === "none") ? 0 : parseInt(p.split('_').pop()); }
 
         async function initBattle() {
-            const btn = document.getElementById('start-btn');
             const arena = document.getElementById('arena');
-            arena.innerHTML = "";
-            units = [];
-            btn.disabled = true;
+            arena.innerHTML = ""; units = [];
+            const cb = "?t=" + Date.now();
+            const [rShop, rStats, rArmies] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
+            const shop = await rShop.json(), stats = await rStats.json(), armies = await rArmies.json();
 
-            try {
-                const cb = "?t=" + Date.now();
-                const [resShop, resStats, resArmies] = await Promise.all([
-                    fetch('shop.json' + cb), fetch('stats.json' + cb), fetch('armies.json' + cb)
-                ]);
+            const myArmy = JSON.parse(localStorage.getItem('myGachaArmy'));
+            const enemy = armies[Object.keys(armies)[Math.floor(Math.random()*Object.keys(armies).length)]];
 
-                const shop = await resShop.json();
-                const stats = await resStats.json();
-                const armies = await resArmies.json();
+            spawnTeam(myArmy, shop, stats, 150, 'team-player');
+            spawnTeam(enemy.units, shop, stats, 950, 'team-enemy');
 
-                const playerArmyIds = JSON.parse(localStorage.getItem('myGachaArmy'));
-                if (!playerArmyIds) return alert("Fais ton armée sur army.html !");
-
-                const armyKeys = Object.keys(armies);
-                const enemy = armies[armyKeys[Math.floor(Math.random() * armyKeys.length)]];
-
-                setupUnits(playerArmyIds, shop, stats, 150, 'team-player');
-                setupUnits(enemy.units, shop, stats, 1000, 'team-enemy');
-
-                document.getElementById('logs').innerHTML = `> Combat : VS <b>${enemy.pseudo}</b> !`;
-                battleActive = true;
-                startLoop();
-            } catch (err) { console.error(err); btn.disabled = false; }
+            battleActive = true;
+            startLoop();
         }
 
-        function setupUnits(ids, shop, stats, startX, team) {
-            ids.forEach((id) => {
-                const card = shop[id];
-                if (!card) return;
-                
-                // NOUVELLES STATS : spd (vitesse) et as (attack speed)
-                const s = stats[id] || { hp: 100, atk: 15, rng: 2, spd: 2, as: 1000 };
-                
+        function spawnTeam(ids, shop, stats, x, team) {
+            ids.forEach(id => {
+                const s = stats[id] || {hp:100, atk:15, rng:2, spd:2.5, as:1000, power:"none"};
                 const angle = Math.random() * Math.PI * 2;
-                const unitSpd = s.spd || 2; 
+                const tier = getTier(s.power);
+                let moveSpd = s.spd;
+                if(s.power.startsWith("speed_boost")) moveSpd *= (1 + tier * 0.25);
 
-                const unitData = {
-                    id: id, name: card.nom, team: team, 
-                    hp: s.hp, maxHp: s.hp, atk: s.atk,
-                    range: (s.rng || 2) * 80,
-                    attackSpeed: s.as || 1000, // Temps entre 2 tirs
-                    moveSpeed: unitSpd,        // Vitesse de base
-                    x: startX + (Math.random() * 60 - 30),
-                    y: Math.floor(Math.random() * (ARENA_H - 150)) + 75,
-                    vx: Math.cos(angle) * unitSpd,
-                    vy: Math.sin(angle) * unitSpd,
-                    lastAtk: 0,
-                    img: card.img.startsWith("Carte/") ? card.img : "Carte/" + card.img
+                const u = {
+                    id, team, hp: s.hp, maxHp: s.hp, atk: s.atk, baseAtk: s.atk,
+                    range: s.rng * 80, as: s.as, spd: moveSpd, power: s.power,
+                    x: x + (Math.random()*40-20), y: Math.random()*(ARENA_H-100)+50,
+                    vx: Math.cos(angle)*moveSpd, vy: Math.sin(angle)*moveSpd,
+                    lastAtk: 0, lastHeal: 0,
+                    img: cardImg(shop[id].img)
                 };
 
                 const el = document.createElement('div');
                 el.className = `unit ${team}`;
-                el.style.backgroundImage = `url('${unitData.img}')`;
-                if(team === 'team-enemy') el.style.transform = "scaleX(-1)";
-                el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="unit-name">${unitData.name}</div>`;
-                
+                el.style.backgroundImage = `url('${u.img}')`;
+                el.innerHTML = `<div class="hp-container"><div class="hp-bar"></div></div><div class="unit-name">${shop[id].nom}</div>`;
                 document.getElementById('arena').appendChild(el);
-                unitData.el = el;
-                unitData.hpBar = el.querySelector('.hp-bar');
-                units.push(unitData);
-                updatePos(unitData);
+                u.el = el; u.hpBar = el.querySelector('.hp-bar');
+                units.push(u);
             });
         }
+
+        function cardImg(path) { return path.startsWith("Carte/") ? path : "Carte/"+path; }
 
         function startLoop() {
             clearInterval(loop);
             loop = setInterval(() => {
-                if (!battleActive) return;
+                if(!battleActive) return;
 
                 units.forEach(u => {
-                    if (u.hp <= 0) return;
+                    if(u.hp <= 0) return;
 
-                    let enemies = units.filter(en => en.team !== u.team && en.hp > 0);
-                    let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
-
-                    // LOGIQUE ATTAQUE
-                    if (target && getDist(u, target) <= u.range) {
-                        // On freine pour tirer
-                        u.vx *= 0.6; u.vy *= 0.6;
-                        if (Date.now() - u.lastAtk > u.attackSpeed) {
-                            attack(u, target);
-                            u.lastAtk = Date.now();
-                        }
-                    } else {
-                        // Maintien de la vitesse de déplacement personnalisée
-                        let currentSpeed = Math.sqrt(u.vx**2 + u.vy**2);
-                        if(currentSpeed < u.moveSpeed) {
-                            u.vx += (Math.random() - 0.5) * 0.5;
-                            u.vy += (Math.random() - 0.5) * 0.5;
-                        }
+                    // 1. POUVOIRS PASSIFS
+                    const tier = getTier(u.power);
+                    if(u.power.startsWith("berserk")) u.atk = (u.hp < u.maxHp*0.4) ? u.baseAtk*(1+tier*0.33) : u.baseAtk;
+                    if(u.power.startsWith("medic") && Date.now()-u.lastHeal > (4000-tier*500)) {
+                        let a = units.find(allie => allie.team === u.team && allie.hp > 0 && allie.hp < allie.maxHp);
+                        if(a) { a.hp = Math.min(a.maxHp, a.hp + tier*15); updateHP(a); u.lastHeal = Date.now(); }
                     }
 
-                    // PHYSIQUE
+                    // 2. IA / ATTAQUE
+                    let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
+                    let target = enemies.sort((a,b) => getDist(u,a)-getDist(u,b))[0];
+
+                    if(target && getDist(u, target) <= u.range) {
+                        u.vx *= 0.7; u.vy *= 0.7;
+                        if(Date.now()-u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
+                    } else {
+                        let mag = Math.sqrt(u.vx**2 + u.vy**2);
+                        if(mag < u.spd) { u.vx += (Math.random()-0.5); u.vy += (Math.random()-0.5); }
+                    }
+
+                    // 3. PHYSIQUE & REBONDS
                     u.x += u.vx; u.y += u.vy;
+                    if(u.x <= 0 || u.x >= ARENA_W-UNIT_SIZE) u.vx *= -1;
+                    if(u.y <= 0 || u.y >= ARENA_H-UNIT_SIZE) u.vy *= -1;
 
-                    // Rebond Murs
-                    if (u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) u.vx *= -1;
-                    if (u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) u.vy *= -1;
-
-                    // 5. REBONDS ENTRE PERSONNAGES (Correctif Vitesse Perso)
                     units.forEach(other => {
-                        if (other === u || other.hp <= 0) return;
+                        if(other === u || other.hp <= 0) return;
                         let d = getDist(u, other);
-                        
-                        if (d < UNIT_SIZE - 5) {
-                            // 1. On échange les directions (Vecteurs)
-                            let tvx = u.vx; let tvy = u.vy;
-                            u.vx = other.vx; u.vy = other.vy;
-                            other.vx = tvx; other.vy = tvy;
-
-                            // 2. RE-NORMALISATION : On force les vitesses à respecter la stat 'moveSpeed' de chacun
-                            // Pour l'unité U
-                            let magU = Math.sqrt(u.vx**2 + u.vy**2) || 1;
-                            u.vx = (u.vx / magU) * u.moveSpeed;
-                            u.vy = (u.vy / magU) * u.moveSpeed;
-
-                            // Pour l'unité OTHER
-                            let magO = Math.sqrt(other.vx**2 + other.vy**2) || 1;
-                            other.vx = (other.vx / magO) * other.moveSpeed;
-                            other.vy = (other.vy / magO) * other.moveSpeed;
-
-                            // 3. Anti-fusion : On les écarte un peu pour éviter qu'ils restent collés
-                            let overlap = (UNIT_SIZE - 5) - d;
-                            let nx = (other.x - u.x) / d;
-                            let ny = (other.y - u.y) / d;
-                            u.x -= nx * overlap / 2;
-                            u.y -= ny * overlap / 2;
+                        if(d < UNIT_SIZE-5) {
+                            let tvx = u.vx; u.vx = other.vx; other.vx = tvx;
+                            let tvy = u.vy; u.vy = other.vy; other.vy = tvy;
+                            let magU = Math.sqrt(u.vx**2+u.vy**2)||1; u.vx=(u.vx/magU)*u.spd; u.vy=(u.vy/magU)*u.spd;
+                            u.x -= (other.x-u.x)*0.05;
                         }
                     });
 
-                    u.x = Math.max(0, Math.min(ARENA_W - UNIT_SIZE, u.x));
-                    u.y = Math.max(0, Math.min(ARENA_H - UNIT_SIZE, u.y));
-                    updatePos(u);
+                    u.el.style.left = u.x+"px"; u.el.style.top = u.y+"px";
                 });
 
-                if(units.filter(u => u.team === 'team-player' && u.hp > 0).length === 0) endBattle('DÉFAITE');
-                if(units.filter(u => u.team === 'team-enemy' && u.hp > 0).length === 0) endBattle('VICTOIRE');
+                checkEnd();
             }, 30);
         }
 
-        function attack(attacker, target) {
-            const b = document.createElement('div');
-            b.className = "bullet";
-            b.style.left = (attacker.x + 30) + "px";
-            b.style.top = (attacker.y + 30) + "px";
+        function shoot(u, t) {
+            if(t.power.startsWith("dodge") && Math.random() < (getTier(t.power)*0.15)) return;
+            const b = document.createElement('div'); b.className = "bullet";
+            b.style.left = (u.x+25)+"px"; b.style.top = (u.y+25)+"px";
             document.getElementById('arena').appendChild(b);
-
+            setTimeout(() => { b.style.left = (t.x+25)+"px"; b.style.top = (t.y+25)+"px"; b.style.transition = "0.2s linear"; }, 20);
             setTimeout(() => {
-                b.style.left = (target.x + 30) + "px";
-                b.style.top = (target.y + 30) + "px";
-                b.style.transition = "0.25s linear";
-            }, 20);
-
-            setTimeout(() => {
-                b.remove();
-                if (target.hp > 0) {
-                    target.hp -= attacker.atk;
-                    target.hpBar.style.width = Math.max(0, (target.hp / target.maxHp * 100)) + "%";
-                    if(target.hp <= 0) {
-                        target.el.style.opacity = "0.2";
-                        target.el.style.filter = "grayscale(1)";
-                    }
-                }
-            }, 270);
+                b.remove(); if(t.hp<=0) return;
+                let d = u.atk;
+                if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1+getTier(u.power)*0.5);
+                if(t.power.startsWith("tank")) d *= (1 - getTier(t.power)*0.2);
+                t.hp -= d; 
+                if(u.power.startsWith("vampire")) { u.hp = Math.min(u.maxHp, u.hp + d*getTier(u.power)*0.15); updateHP(u); }
+                updateHP(t);
+                if(t.hp <= 0) die(t);
+            }, 220);
         }
 
-        function updatePos(u) { u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px"; }
-        function getDist(a, b) { return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2)); }
-        function endBattle(res) {
-            battleActive = false;
-            clearInterval(loop);
-            document.getElementById('logs').innerHTML += `<br><b style="font-size:20px; color:yellow;">🏁 ${res}</b>`;
-            document.getElementById('start-btn').disabled = false;
+        function die(u) {
+            u.el.style.opacity = "0.2"; u.el.style.filter = "grayscale(1)";
+            if(u.power.startsWith("last_blast")) {
+                let tier = getTier(u.power);
+                const boom = document.createElement('div'); boom.className = "explosion";
+                boom.style.width = boom.style.height = (tier*80)+"px";
+                boom.style.left = (u.x - tier*20)+"px"; boom.style.top = (u.y - tier*20)+"px";
+                document.getElementById('arena').appendChild(boom);
+                units.forEach(en => { if(en.team !== u.team && en.hp > 0 && getDist(u, en) < tier*80) { en.hp -= tier*30; updateHP(en); if(en.hp<=0) die(en); } });
+                setTimeout(() => boom.remove(), 500);
+            }
+        }
+
+        function updateHP(u) { u.hpBar.style.width = Math.max(0, (u.hp/u.maxHp*100))+"%"; }
+        function getDist(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+        function checkEnd() {
+            let p = units.filter(u => u.team === 'team-player' && u.hp > 0).length;
+            let e = units.filter(u => u.team === 'team-enemy' && u.hp > 0).length;
+            if(p === 0 || e === 0) { battleActive = false; clearInterval(loop); alert(p === 0 ? "DÉFAITE" : "VICTOIRE"); }
         }
     </script>
 </body>

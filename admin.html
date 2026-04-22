@@ -2,169 +2,88 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Configuration des Stats</title>
+    <title>Admin - Stats & Pouvoirs Tiers</title>
     <style>
-        :root {
-            --bg: #1a1b1e;
-            --card-bg: #2f3136;
-            --accent: #43b581;
-            --text: #ffffff;
-        }
-        body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Segoe UI', sans-serif; 
-            padding: 20px;
-        }
-        h1 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        
-        .container { max-width: 1100px; margin: 0 auto; }
-
+        :root { --bg: #1a1b1e; --card-bg: #2f3136; --accent: #43b581; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 1250px; margin: 0 auto; }
         .card-row { 
-            background: var(--card-bg); 
-            margin-bottom: 10px; 
-            padding: 15px; 
-            border-radius: 8px; 
-            display: grid;
-            grid-template-columns: 80px 200px repeat(5, 1fr);
-            align-items: center;
-            gap: 15px;
-            border-left: 5px solid transparent;
-            transition: 0.2s;
+            background: var(--card-bg); margin-bottom: 10px; padding: 10px; border-radius: 8px; 
+            display: grid; grid-template-columns: 60px 150px repeat(6, 1fr); align-items: center; gap: 10px;
         }
-        .card-row:hover { border-left-color: var(--accent); background: #36393f; }
-
-        .stat-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 10px; color: #b9bbbe; text-transform: uppercase; font-weight: bold; }
-        
-        input { 
-            background: #202225; 
-            border: 1px solid #111; 
-            color: white; 
-            padding: 8px; 
-            border-radius: 4px;
-            width: 80%;
-        }
-
-        .actions { 
-            position: sticky; bottom: 0; background: var(--bg); 
-            padding: 20px; border-top: 2px solid #333; margin-top: 30px;
-            display: flex; flex-direction: column; gap: 15px;
-        }
-
-        button { 
-            background: var(--accent); 
-            color: white; border: none; padding: 15px; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;
-        }
-        button:hover { background: #3ca374; }
-
-        #output { 
-            width: 100%; height: 250px; background: #000; 
-            color: #00ff00; font-family: monospace; padding: 15px;
-            border-radius: 8px; resize: none;
-        }
-        .id-badge { background: #202225; padding: 5px; border-radius: 4px; font-weight: bold; text-align: center; }
+        .stat-group { display: flex; flex-direction: column; gap: 3px; }
+        label { font-size: 9px; color: #b9bbbe; text-transform: uppercase; }
+        input, select { background: #202225; border: 1px solid #111; color: white; padding: 5px; border-radius: 4px; }
+        .actions { position: sticky; bottom: 0; background: var(--bg); padding: 20px; border-top: 2px solid #333; }
+        #output { width: 100%; height: 150px; background: #000; color: #00ff00; font-family: monospace; margin-top: 10px; }
+        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>⚙️ Panel Admin : Stats des Cartes</h1>
-        <p>Règle les statistiques de tes cartes ici, puis génère le JSON pour ton fichier GitHub.</p>
-
-        <div id="editor-list">
-            Chargement des cartes...
-        </div>
-
+        <h1>⚙️ Configuration des Stats & Pouvoirs</h1>
+        <div id="editor-list">Chargement...</div>
         <div class="actions">
-            <button onclick="generateJSON()">🚀 GÉNÉRER LE FICHIER STATS.JSON</button>
-            <textarea id="output" readonly placeholder="Le code JSON apparaîtra ici après avoir cliqué sur le bouton..."></textarea>
-            <p style="font-size: 12px; color: #888;">Copie tout le texte ci-dessus et remplace le contenu de ton fichier <b>stats.json</b> sur GitHub.</p>
+            <button onclick="generateJSON()">🚀 GÉNÉRER STATS.JSON</button>
+            <textarea id="output" readonly></textarea>
         </div>
     </div>
 
     <script>
-        let cardsBase = {};
+        const powerList = [
+            {id:"none", n:"Aucun"},
+            {id:"berserk_1", n:"Berserk T1 (+30%)"}, {id:"berserk_2", n:"Berserk T2 (+60%)"}, {id:"berserk_3", n:"Berserk T3 (+100%)"},
+            {id:"last_blast_1", n:"Explosion T1"}, {id:"last_blast_2", n:"Explosion T2"}, {id:"last_blast_3", n:"Explosion T3"},
+            {id:"vampire_1", n:"Vampire T1"}, {id:"vampire_2", n:"Vampire T2"}, {id:"vampire_3", n:"Vampire T3"},
+            {id:"aura_atk_1", n:"Aura ATK T1"}, {id:"aura_atk_2", n:"Aura ATK T2"}, {id:"aura_atk_3", n:"Aura ATK T3"},
+            {id:"tank_1", n:"Tank T1 (-20%)"}, {id:"tank_2", n:"Tank T2 (-40%)"}, {id:"tank_3", n:"Tank T3 (-60%)"},
+            {id:"sniper_1", n:"Sniper T1"}, {id:"sniper_2", n:"Sniper T2"}, {id:"sniper_3", n:"Sniper T3"},
+            {id:"dodge_1", n:"Esquive T1 (15%)"}, {id:"dodge_2", n:"Esquive T2 (30%)"}, {id:"dodge_3", n:"Esquive T3 (45%)"},
+            {id:"medic_1", n:"Soin T1"}, {id:"medic_2", n:"Soin T2"}, {id:"medic_3", n:"Soin T3"},
+            {id:"poison_1", n:"Poison T1"}, {id:"poison_2", n:"Poison T2"}, {id:"poison_3", n:"Poison T3"},
+            {id:"speed_boost_1", n:"Vitesse T1"}, {id:"speed_boost_2", n:"Vitesse T2"}, {id:"speed_boost_3", n:"Vitesse T3"}
+        ];
 
-        // Charger le shop.json et stats.json (pour pré-remplir si déjà configuré)
         async function loadData() {
-            try {
-                const cb = "?t=" + Date.now();
-                const resShop = await fetch('shop.json' + cb);
-                cardsBase = await resShop.json();
-
-                let existingStats = {};
-                try {
-                    const resStats = await fetch('stats.json' + cb);
-                    existingStats = await resStats.json();
-                } catch(e) { console.log("Pas de stats existantes."); }
-
-                const container = document.getElementById('editor-list');
-                container.innerHTML = "";
-
-                for (let id in cardsBase) {
-                    const s = existingStats[id] || {};
-                    container.innerHTML += `
-                        <div class="card-row" data-id="${id}">
-                            <div class="id-badge">${id}</div>
-                            <div style="font-weight:bold">${cardsBase[id].nom}</div>
-                            
-                            <div class="stat-group">
-                                <label>PV (HP)</label>
-                                <input type="number" class="hp" value="${s.hp || 100}">
-                            </div>
-                            
-                            <div class="stat-group">
-                                <label>Dégâts (ATK)</label>
-                                <input type="number" class="atk" value="${s.atk || 15}">
-                            </div>
-                            
-                            <div class="stat-group">
-                                <label>Portée (RNG)</label>
-                                <input type="number" class="rng" value="${s.rng || 2}" min="1" max="10">
-                            </div>
-
-                            <div class="stat-group">
-                                <label>Vitesse (SPD)</label>
-                                <input type="number" class="spd" step="0.1" value="${s.spd || 2.5}">
-                            </div>
-
-                            <div class="stat-group">
-                                <label>Vitesse ATK (ms)</label>
-                                <input type="number" class="as" value="${s.as || 1000}" step="100">
-                            </div>
-                        </div>`;
-                }
-            } catch (err) {
-                document.getElementById('editor-list').innerHTML = "❌ Erreur de chargement de shop.json";
+            const cb = "?t=" + Date.now();
+            const [rShop, rStats] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb).catch(()=>({json:()=>({})}))]);
+            const shop = await rShop.json();
+            const stats = await rStats.json();
+            
+            const list = document.getElementById('editor-list');
+            list.innerHTML = "";
+            for(let id in shop) {
+                const s = stats[id] || {};
+                let pOptions = powerList.map(p => `<option value="${p.id}" ${s.power===p.id?'selected':''}>${p.n}</option>`).join('');
+                list.innerHTML += `
+                    <div class="card-row" data-id="${id}">
+                        <div style="font-size:10px">${id}</div>
+                        <div style="font-weight:bold">${shop[id].nom}</div>
+                        <div class="stat-group"><label>PV</label><input type="number" class="hp" value="${s.hp||100}"></div>
+                        <div class="stat-group"><label>ATK</label><input type="number" class="atk" value="${s.atk||15}"></div>
+                        <div class="stat-group"><label>RNG</label><input type="number" class="rng" value="${s.rng||2}"></div>
+                        <div class="stat-group"><label>SPD</label><input type="number" class="spd" step="0.1" value="${s.spd||2.5}"></div>
+                        <div class="stat-group"><label>AS (ms)</label><input type="number" class="as" value="${s.as||1000}"></div>
+                        <div class="stat-group"><label>POUVOIR</label><select class="power">${pOptions}</select></div>
+                    </div>`;
             }
         }
 
         function generateJSON() {
-            let finalConfig = {};
-            const rows = document.querySelectorAll('.card-row');
-            
-            rows.forEach(row => {
-                const id = row.dataset.id;
-                finalConfig[id] = {
+            let res = {};
+            document.querySelectorAll('.card-row').forEach(row => {
+                res[row.dataset.id] = {
                     hp: parseInt(row.querySelector('.hp').value),
                     atk: parseInt(row.querySelector('.atk').value),
                     rng: parseInt(row.querySelector('.rng').value),
                     spd: parseFloat(row.querySelector('.spd').value),
-                    as: parseInt(row.querySelector('.as').value)
+                    as: parseInt(row.querySelector('.as').value),
+                    power: row.querySelector('.power').value
                 };
             });
-
-            const jsonString = JSON.stringify(finalConfig, null, 4);
-            document.getElementById('output').value = jsonString;
-            
-            // Auto-sélection pour copier facilement
-            document.getElementById('output').select();
-            alert("JSON Généré ! Tu n'as plus qu'à le copier dans ton fichier stats.json");
+            document.getElementById('output').value = JSON.stringify(res, null, 4);
         }
-
-        window.onload = loadData;
+        loadData();
     </script>
 </body>
 </html>
