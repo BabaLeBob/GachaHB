@@ -4,55 +4,60 @@
     <meta charset="UTF-8">
     <title>GachaHB - Gestion d'Armée</title>
     <style>
-        body { background: #1a1b1e; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-align: center; overflow-x: hidden; }
+        :root { --bg: #1a1b1e; --accent: #5865f2; --card-bg: #2f3136; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-align: center; }
         
         /* Overlay Connexion */
-        #login-overlay { position: fixed; inset: 0; background: #1a1b1e; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        input { padding: 12px; border-radius: 5px; border: none; width: 250px; margin-bottom: 10px; font-size: 1.1em; }
+        #login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        input { padding: 12px; border-radius: 8px; border: none; width: 250px; margin-bottom: 10px; font-size: 16px; }
         
         .header { display: flex; justify-content: space-between; align-items: center; max-width: 900px; margin: 0 auto 20px; }
         
         /* Slots Armée */
         .army-slots {
-            background: rgba(88, 101, 242, 0.1); border: 3px solid #5865f2; border-radius: 20px;
-            padding: 20px; display: flex; justify-content: center; gap: 15px; min-height: 190px; margin-bottom: 40px;
+            background: rgba(88, 101, 242, 0.1); border: 3px solid var(--accent); border-radius: 20px;
+            padding: 20px; display: flex; justify-content: center; gap: 15px; min-height: 180px; margin-bottom: 40px;
         }
-
-        .slot { width: 120px; height: 170px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 10px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+        .slot { width: 120px; height: 170px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 10px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; position: relative;}
+        .slot-label { position: absolute; bottom: -20px; font-size: 10px; color: var(--accent); }
 
         /* Réserve */
-        #reserve-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 1000px; margin: 0 auto; }
+        .reserve-title { text-align: left; max-width: 900px; margin: 10px auto; color: #aaa; font-size: 1.1em; border-left: 3px solid var(--accent); padding-left: 10px; }
+        #reserve-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 1000px; margin: 0 auto; }
 
-        /* Cartes Optimisées */
+        /* Cartes */
         .card {
             width: 120px; height: 170px; background-size: contain; background-repeat: no-repeat; background-position: center;
-            background-color: #2f3136; border: 2px solid #444; border-radius: 10px; cursor: pointer; transition: transform 0.1s;
-            will-change: transform; /* Optimisation Lag */
+            background-color: var(--card-bg); border: 2px solid #444; border-radius: 10px; cursor: pointer; transition: 0.2s;
         }
-        .card:hover { transform: scale(1.05); border-color: #5865f2; }
+        .card:hover { transform: scale(1.05); border-color: var(--accent); box-shadow: 0 0 10px rgba(88,101,242,0.5); }
         
-        #tooltip { position: fixed; display: none; background: rgba(0,0,0,0.9); color: white; padding: 10px; border-radius: 5px; border: 1px solid #5865f2; z-index: 1000; pointer-events: none; width: 180px; font-size: 0.8em; }
+        #tooltip { position: fixed; display: none; background: rgba(0,0,0,0.9); color: white; padding: 10px; border-radius: 5px; border: 1px solid var(--accent); z-index: 1000; pointer-events: none; width: 200px; font-size: 0.85em; }
 
-        .btn-save { background: #43b581; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .user-info { color: #5865f2; font-weight: bold; }
+        button { padding: 12px 25px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #4752c4; }
+        .user-tag { background: var(--accent); padding: 5px 12px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
-        <h2 style="color:#5865f2">IDENTIFICATION DISCORD</h2>
-        <input type="text" id="pseudo-input" placeholder="Ton pseudo Discord...">
-        <button class="btn-save" onclick="login()">ACCÉDER À MON ARMÉE</button>
+        <h1>📜 Accès aux Armées</h1>
+        <input type="text" id="pseudo-input" placeholder="Pseudo Discord (ex: Bob)">
+        <button onclick="login()">Ouvrir mon Grimoire</button>
+        <p id="login-status" style="margin-top:15px; color: #f04747;"></p>
     </div>
 
     <div class="header">
-        <div>Utilisateur : <span id="current-user" class="user-info">...</span></div>
-        <button class="btn-save" onclick="saveArmy()">💾 ENREGISTRER</button>
+        <a href="index.html" style="color:#aaa; text-decoration:none;">⬅ Menu</a>
+        <div>Joueur : <span id="current-user" class="user-tag">...</span></div>
+        <button onclick="saveArmy()">💾 SAUVEGARDER L'ARMÉE</button>
     </div>
 
+    <h2 style="color:var(--accent)">MON ÉQUIPE (5 SLOTS)</h2>
     <div class="army-slots" id="army-slots"></div>
 
-    <div style="text-align:left; max-width:900px; margin: 10px auto; color:#aaa;">MA RÉSERVE :</div>
+    <div class="reserve-title">MES CARTES DISPONIBLES</div>
     <div id="reserve-container"></div>
 
     <div id="tooltip"></div>
@@ -60,29 +65,62 @@
     <script>
         let fullShop = {}; 
         let allStats = {}; 
-        let userInventory = []; // Cartes possédées par le joueur
-        let selectedArmy = []; 
+        let userInventory = []; // Cartes lues dans user_cards.json
+        let selectedArmy = []; // L'armée choisie
         let currentUser = "";
+        let currentUserId = "";
         const MAX_SLOTS = 5;
 
-        // 1. CONNEXION
-        function login() {
-            const input = document.getElementById('pseudo-input').value.trim();
-            if(!input) return alert("Entrez un pseudo !");
-            
-            currentUser = input;
-            document.getElementById('current-user').innerText = currentUser;
-            document.getElementById('login-overlay').style.display = "none";
-            
-            // On charge l'inventaire spécifique à ce pseudo
-            // Note: Tu devras t'assurer que ton shop.js remplit bien 'inventaire_Pseudo'
-            userInventory = JSON.parse(localStorage.getItem('inventaire_' + currentUser)) || [];
-            selectedArmy = JSON.parse(localStorage.getItem('army_' + currentUser)) || [];
-            
-            initData();
+        // 1. CONNEXION ET RECHERCHE ID
+        async function login() {
+            const input = document.getElementById('pseudo-input').value.trim().toLowerCase();
+            const status = document.getElementById('login-status');
+            if(!input) return;
+
+            try {
+                const cb = "?t=" + Date.now();
+                // Lire les pseudos
+                const resNames = await fetch('./noms.json' + cb);
+                const namesData = await resNames.json();
+
+                for (let id in namesData) {
+                    if (namesData[id].toLowerCase() === input) {
+                        currentUserId = id;
+                        currentUser = namesData[id];
+                        break;
+                    }
+                }
+
+                if (!currentUserId) {
+                    status.innerText = "❌ Pseudo inconnu dans la base de données.";
+                    return;
+                }
+
+                // Charger l'inventaire du joueur
+                const resUser = await fetch('./user_cards.json' + cb);
+                const userCards = await resUser.json();
+                userInventory = userCards[currentUserId] || [];
+
+                if (userInventory.length === 0) {
+                    status.innerText = "📭 Vous n'avez aucune carte !";
+                    return;
+                }
+
+                // Charger l'armée sauvegardée localement pour ce joueur
+                selectedArmy = JSON.parse(localStorage.getItem('army_' + currentUserId)) || [];
+                
+                document.getElementById('current-user').innerText = currentUser;
+                document.getElementById('login-overlay').style.display = "none";
+                
+                initGameData();
+
+            } catch (err) {
+                status.innerText = "⚠️ Erreur de chargement des JSON.";
+                console.error(err);
+            }
         }
 
-        async function initData() {
+        async function initGameData() {
             const cb = "?t=" + Date.now();
             const [rS, rSt] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb)]);
             fullShop = await rS.json();
@@ -93,24 +131,23 @@
         function render() {
             const slotContainer = document.getElementById('army-slots');
             const reserveContainer = document.getElementById('reserve-container');
-            
-            // Optimisation : On vide et on reconstruit proprement
             slotContainer.innerHTML = "";
             reserveContainer.innerHTML = "";
 
-            // Rendu Slots
+            // Rendu des 5 Slots
             for(let i=0; i < MAX_SLOTS; i++) {
                 const slot = document.createElement('div');
                 slot.className = "slot";
                 if(selectedArmy[i]) {
                     slot.appendChild(createCard(selectedArmy[i], true));
                 } else {
-                    slot.innerHTML = "<small style='color:#333'>VIDE</small>";
+                    slot.innerHTML = `<span style="color:#333; font-size:12px;">VIDE</span>`;
                 }
+                slot.innerHTML += `<div class="slot-label">POS ${i+1}</div>`;
                 slotContainer.appendChild(slot);
             }
 
-            // Rendu Réserve (Seulement ce que le joueur possède)
+            // Rendu de la réserve (Uniquement les cartes possédées et pas dans l'armée)
             userInventory.forEach(id => {
                 if(!selectedArmy.includes(id)) {
                     reserveContainer.appendChild(createCard(id, false));
@@ -124,7 +161,8 @@
 
             const card = document.createElement('div');
             card.className = "card";
-            card.style.backgroundImage = `url('Carte/${data.img.replace('Carte/','')}')`;
+            let imgPath = data.img.startsWith("Carte/") ? data.img : "Carte/" + data.img;
+            card.style.backgroundImage = `url('${imgPath}')`;
 
             card.onclick = () => {
                 if(inArmy) {
@@ -135,14 +173,13 @@
                 render();
             };
 
-            // Tooltip léger pour éviter le lag
-            card.onmouseenter = () => { document.getElementById('tooltip').style.display = "block"; };
             card.onmousemove = (e) => {
                 const tt = document.getElementById('tooltip');
                 const s = allStats[id] || {};
-                tt.style.left = (e.clientX + 10) + "px";
-                tt.style.top = (e.clientY + 10) + "px";
-                tt.innerHTML = `<b>${data.nom}</b><br>PV: ${s.hp} | ATK: ${s.atk}`;
+                tt.style.display = "block";
+                tt.style.left = (e.clientX + 15) + "px";
+                tt.style.top = (e.clientY + 15) + "px";
+                tt.innerHTML = `<b>${data.nom}</b><br>PV: ${s.hp} | ATK: ${s.atk}<br><small>${s.power || ''}</small>`;
             };
             card.onmouseleave = () => { document.getElementById('tooltip').style.display = "none"; };
 
@@ -150,10 +187,11 @@
         }
 
         function saveArmy() {
-            localStorage.setItem('army_' + currentUser, JSON.stringify(selectedArmy));
-            // Important : On met aussi à jour le localStorage général pour le combat.html
+            // On sauvegarde l'armée spécifique à l'ID de l'utilisateur
+            localStorage.setItem('army_' + currentUserId, JSON.stringify(selectedArmy));
+            // On met à jour l'armée active pour le combat
             localStorage.setItem('myGachaArmy', JSON.stringify(selectedArmy));
-            alert("Armée de " + currentUser + " enregistrée !");
+            alert("✅ Armée de " + currentUser + " sauvegardée !");
         }
     </script>
 </body>
