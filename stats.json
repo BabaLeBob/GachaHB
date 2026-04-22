@@ -1,7 +1,7 @@
 {
     "001": {
         "hp": 60,
-        "atk":5,
+        "atk": 5,
         "rng": 1,
         "spd": 9,
         "as": 10,
@@ -189,7 +189,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "aura_stop_1"
     },
     "006": {
         "hp": 100,
@@ -221,7 +221,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "burn_3"
     },
     "029": {
         "hp": 100,
@@ -325,7 +325,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "piercing_3"
     },
     "027": {
         "hp": 100,
@@ -397,7 +397,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "poison_3"
     },
     "C02": {
         "hp": 100,
@@ -605,7 +605,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "burn_3"
     },
     "OP002": {
         "hp": 100,
@@ -629,7 +629,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "aura_stop_1"
     },
     "OP001": {
         "hp": 100,
@@ -653,7 +653,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "piercing_3"
     },
     "OP028": {
         "hp": 100,
