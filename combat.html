@@ -93,6 +93,10 @@
                 dead: false
             };
 
+            u.frostTicks = 0;
+            u.baseSpd = stat.spd; // On garde la vitesse de base pour le Givre et le Turbo
+            u.turboBonus = 0;
+
             const el = document.createElement('div');
             el.className = `unit ${team}`;
 
@@ -135,6 +139,42 @@
                 // 2. SCAN DE L'AURA DE STASE
                 let previouslyParalyzed = u.isParalyzed;
                 u.isParalyzed = false;
+
+                // --- POUVOIR MÉDIC (Soin de zone) ---
+                if (Date.now() - u.lastTick > 1000) {
+                    if (u.power && u.power.startsWith("medic")) {
+                        const soin = getTier(u.power) * 5 + 5;
+                        units.forEach(allie => {
+                            if (!allie.dead && allie.team === u.team && getDist(u, allie) < 180) {
+                                if (allie.hp < allie.maxHp) {
+                                    allie.hp = Math.min(allie.maxHp, allie.hp + soin);
+                                    showFx(allie, "✨", "#00ffcc");
+                                }
+                            }
+                        });
+                    }
+
+                    // Reset du Givre
+                    if (u.frostTicks > 0) {
+                        u.frostTicks--;
+                        if (u.frostTicks <= 0) {
+                            u.spd = u.baseSpd + (u.turboBonus || 0); // Rend la vitesse (incluant turbo)
+                            u.el.style.filter = "none";
+                        }
+                    }
+                    u.lastTick = Date.now();
+                }
+
+                // --- POUVOIR TURBO (Rebonds) ---
+                // Dans la section des collisions murs et unités, là où tu changes u.vx/u.vy :
+                if (u.power && u.power.startsWith("turbo")) {
+                    u.turboBonus = Math.min(u.turboBonus + 0.2, 3); // Gagne 0.2 spd par rebond (max +3)
+                    u.spd = u.baseSpd + u.turboBonus;
+                    // On met à jour vx/vy pour refléter la nouvelle vitesse
+                    let angle = Math.atan2(u.vy, u.vx);
+                    u.vx = Math.cos(angle) * u.spd;
+                    u.vy = Math.sin(angle) * u.spd;
+                }
                 
                 // RÈGLE : Si "u" possède lui-même le pouvoir Aura, il est immunisé
                 const isAuraUser = u.power && u.power.startsWith("aura_stop");
@@ -242,8 +282,39 @@
         }
 
         function hit(u, t) {
+            if (t.dead) return;
             let d = u.atk;
-            const uT = getTier(u.power), tT = getTier(t.power);
+            const uT = getTier(u.power);
+            const tT = getTier(t.power);
+
+            // --- POUVOIR REMPART (Défense de groupe) ---
+            if (t.power && t.power.startsWith("phalanx")) {
+                let alliesProches = units.filter(a => !a.dead && a.team === t.team && a !== t && getDist(t, a) < 100).length;
+                d *= (1 - (alliesProches * 0.20)); // -20% par allié
+            }
+
+            // Calcul des réductions classiques (Tank / Perçant)
+            if (u.power.startsWith("piercing")) { 
+                if (t.power.startsWith("tank")) d *= (1 + uT * 0.25); 
+            } else if (t.power.startsWith("tank")) {
+                d *= (1 - tT * 0.2);
+            }
+
+            // --- POUVOIR GIVRE (Ralentissement) ---
+            if (u.power.startsWith("frost")) {
+                t.frostTicks = 4; // Dure environ 2 secondes (si check chaque 500ms)
+                t.spd = t.baseSpd * (1 - (uT * 0.2 + 0.2)); // Réduit la vitesse
+                t.el.style.filter = "hue-rotate(180deg) brightness(1.2)"; // Effet bleu
+            }
+
+            // --- POUVOIR KNOCKBACK (Repousse) ---
+            if (u.power.startsWith("knockback")) {
+                let angle = Math.atan2(t.y - u.y, t.x - u.x);
+                t.x += Math.cos(angle) * 40;
+                t.y += Math.sin(angle) * 40;
+            }
+
+            t.hp -= d;
             if(u.power.startsWith("piercing")) { if(t.power.startsWith("tank")) d *= (1 + uT*0.25); }
             else if(t.power.startsWith("tank")) d *= (1 - tT*0.2);
             if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1 + uT*0.5);
