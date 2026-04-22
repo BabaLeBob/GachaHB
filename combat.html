@@ -120,16 +120,59 @@
 
             units.forEach(u => {
                 if(u.hp <= 0) return;
+
                 const tier = getTier(u.power);
                 
-                // Mouvement et Rebonds Murs
-                u.x += u.vx; u.y += u.vy;
-                if(u.x <= 0) { u.x = 2; u.vx = Math.abs(u.vx); }
-                else if(u.x >= ARENA_W - UNIT_SIZE) { u.x = ARENA_W - UNIT_SIZE - 2; u.vx = -Math.abs(u.vx); }
-                if(u.y <= 0) { u.y = 2; u.vy = Math.abs(u.vy); }
-                else if(u.y >= ARENA_H - UNIT_SIZE) { u.y = ARENA_H - UNIT_SIZE - 2; u.vy = -Math.abs(u.vy); }
+                // 1. DÉPLACEMENT
+                u.x += u.vx; 
+                u.y += u.vy;
 
-                // Berserk FX Check
+                // 2. REBONDS MURS (On force la vitesse initiale 'spd')
+                if(u.x <= 0) {
+                    u.x = 2;
+                    u.vx = u.spd; // On réinjecte sa vitesse précise
+                } else if(u.x >= ARENA_W - UNIT_SIZE) {
+                    u.x = ARENA_W - UNIT_SIZE - 2;
+                    u.vx = -u.spd;
+                }
+
+                if(u.y <= 0) {
+                    u.y = 2;
+                    u.vy = u.spd;
+                } else if(u.y >= ARENA_H - UNIT_SIZE) {
+                    u.y = ARENA_H - UNIT_SIZE - 2;
+                    u.vy = -u.spd;
+                }
+
+                // 3. COLLISION UNITÉS (Calcul de rebond propre)
+                units.forEach(o => {
+                    if(o === u || o.hp <= 0) return;
+                    let dx = o.x - u.x;
+                    let dy = o.y - u.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if(dist < UNIT_SIZE - 5) {
+                        // On calcule l'angle de collision
+                        let angle = Math.atan2(dy, dx);
+                        
+                        // On propulse les deux unités dans des directions opposées
+                        // Mais on multiplie par leur PROPRE vitesse (u.spd et o.spd)
+                        u.vx = -Math.cos(angle) * u.spd;
+                        u.vy = -Math.sin(angle) * u.spd;
+                        
+                        o.vx = Math.cos(angle) * o.spd;
+                        o.vy = Math.sin(angle) * o.spd;
+
+                        // Anti-chevauchement (on les écarte pour éviter qu'ils restent collés)
+                        let overlap = UNIT_SIZE - dist;
+                        u.x -= Math.cos(angle) * (overlap / 2);
+                        u.y -= Math.sin(angle) * (overlap / 2);
+                        o.x += Math.cos(angle) * (overlap / 2);
+                        o.y += Math.sin(angle) * (overlap / 2);
+                    }
+                });
+
+                // 4. BERSERK & COMBAT
                 if(u.power.startsWith("berserk")) {
                     if(u.hp < u.maxHp * 0.4) {
                         u.atk = u.baseAtk * (1 + tier*0.33);
@@ -140,29 +183,29 @@
                     }
                 }
 
-                // Combat IA
                 let enemies = units.filter(e => e.team !== u.team && e.hp > 0);
                 let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
                 if(target && getDist(u, target) <= u.range) {
-                    if(Date.now() - u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
+                    if(Date.now() - u.lastAtk > u.as) {
+                        shoot(u, target);
+                        u.lastAtk = Date.now();
+                    }
                 }
 
-                // Collisions Unités
-                units.forEach(o => {
-                    if(o === u || o.hp <= 0) return;
-                    if(getDist(u, o) < UNIT_SIZE) {
-                        let tx = u.vx; u.vx = o.vx; o.vx = tx;
-                        let ty = u.vy; u.vy = o.vy; o.vy = ty;
-                        let angle = Math.atan2(u.y - o.y, u.x - o.x);
-                        u.x += Math.cos(angle) * 3; u.y += Math.sin(angle) * 3;
-                    }
-                });
-
-                u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px";
+                // Mise à jour visuelle
+                u.el.style.left = u.x + "px";
+                u.el.style.top = u.y + "px";
             });
 
-            if(units.filter(u=>u.team==='team-player' && u.hp>0).length === 0) end("DÉFAITE");
-            if(units.filter(u=>u.team==='team-enemy' && u.hp>0).length === 0) end("VICTOIRE");
+            // FIN DE PARTIE
+            const pAlive = units.filter(u=>u.team==='team-player' && u.hp>0).length;
+            const eAlive = units.filter(u=>u.team==='team-enemy' && u.hp>0).length;
+            if(pAlive === 0 || eAlive === 0) {
+                battleActive = false;
+                alert(pAlive === 0 ? "DÉFAITE !" : "VICTOIRE !");
+                location.reload();
+            }
+
             if(battleActive) requestAnimationFrame(update);
         }
 
