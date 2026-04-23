@@ -232,10 +232,20 @@
                     }
                 });
 
-                // 4. TICKS (Dégâts sur la durée)
-                if(Date.now() - u.lastTick > 1000) {
-                    if(u.poisonTicks > 0) { u.hp -= 5; u.poisonTicks--; showFx(u, "🤢", "#4ecb71"); }
-                    if(u.burnTicks > 0) { u.hp -= 8; u.burnTicks--; showFx(u, "🔥", "#ff5f00"); }
+                // 4. TICKS (Dégâts sur la durée : Venin et Brûlure)
+                if (Date.now() - u.lastTick > 1000) {
+                    if (u.poisonTicks > 0 && !u.dead) {
+                        let poisonDmg = 5; // Tu peux varier selon le tier si tu veux
+                        u.hp -= poisonDmg;
+                        u.poisonTicks--;
+                        showFx(u, "🤢", "#4ecb71");
+                    }
+                    if (u.burnTicks > 0 && !u.dead) {
+                        u.hp -= 8;
+                        u.burnTicks--;
+                        showFx(u, "🔥", "#ff5f00");
+                    }
+                    // ON NE MET À JOUR lastTick QU'ICI !
                     u.lastTick = Date.now();
                 }
 
@@ -287,41 +297,34 @@
             const uT = getTier(u.power);
             const tT = getTier(t.power);
 
-            // --- POUVOIR REMPART (Défense de groupe) ---
+            // --- CALCUL DES RÉDUCTIONS / BONUS ---
             if (t.power && t.power.startsWith("phalanx")) {
                 let alliesProches = units.filter(a => !a.dead && a.team === t.team && a !== t && getDist(t, a) < 100).length;
-                d *= (1 - (alliesProches * 0.20)); // -20% par allié
+                d *= (1 - (alliesProches * 0.20));
             }
 
-            // Calcul des réductions classiques (Tank / Perçant)
             if (u.power.startsWith("piercing")) { 
                 if (t.power.startsWith("tank")) d *= (1 + uT * 0.25); 
-            } else if (t.power.startsWith("tank")) {
+            } else if (t.power && t.power.startsWith("tank")) {
                 d *= (1 - tT * 0.2);
             }
 
-            // --- POUVOIR GIVRE (Ralentissement) ---
-            if (u.power.startsWith("frost")) {
-                t.frostTicks = 4; // Dure environ 2 secondes (si check chaque 500ms)
-                t.spd = t.baseSpd * (1 - (uT * 0.2 + 0.2)); // Réduit la vitesse
-                t.el.style.filter = "hue-rotate(180deg) brightness(1.2)"; // Effet bleu
+            if (u.power.startsWith("sniper") && getDist(u, t) > 250) d *= (1 + uT * 0.5);
+
+            // --- APPLICATION DES EFFETS (Venin / Brûlure) ---
+            if (u.power.startsWith("poison")) {
+                t.poisonTicks = 5; // Applique 5 secondes de venin
+            }
+            if (u.power.startsWith("burn")) {
+                t.burnTicks = 5; 
+            }
+            if (u.power.startsWith("vampire")) {
+                u.hp = Math.min(u.maxHp, u.hp + (d * 0.2));
             }
 
-            // --- POUVOIR KNOCKBACK (Repousse) ---
-            if (u.power.startsWith("knockback")) {
-                let angle = Math.atan2(t.y - u.y, t.x - u.x);
-                t.x += Math.cos(angle) * 40;
-                t.y += Math.sin(angle) * 40;
-            }
-
+            // --- APPLICATION DES DÉGÂTS (Une seule fois !) ---
             t.hp -= d;
-            if(u.power.startsWith("piercing")) { if(t.power.startsWith("tank")) d *= (1 + uT*0.25); }
-            else if(t.power.startsWith("tank")) d *= (1 - tT*0.2);
-            if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1 + uT*0.5);
-            if(u.power.startsWith("poison")) t.poisonTicks = 5;
-            if(u.power.startsWith("burn")) t.burnTicks = 5;
-            t.hp -= d;
-            if(u.power.startsWith("vampire")) u.hp = Math.min(u.maxHp, u.hp + (d*0.2));
+            showFx(t, Math.floor(d), "#fff"); // Affiche les dégâts physiques
         }
 
         function die(u) {

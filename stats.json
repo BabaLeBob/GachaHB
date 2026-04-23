@@ -425,19 +425,19 @@
     },
     "C05": {
         "hp": 100,
-        "atk": 15,
+        "atk": 40,
         "rng": 1,
-        "spd": 5,
-        "as": 1000,
-        "power": "none"
+        "spd": 2.8,
+        "as": 4000,
+        "power": "aura_stop_1"
     },
     "C06": {
         "hp": 100,
-        "atk": 15,
+        "atk": 40,
         "rng": 1,
-        "spd": 5,
-        "as": 1000,
-        "power": "none"
+        "spd": 2.8,
+        "as": 4000,
+        "power": "aura_stop_1"
     },
     "OP004": {
         "hp": 100,
