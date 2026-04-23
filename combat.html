@@ -201,11 +201,11 @@
                 // REBONDS ET TURBO
                 if(u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) { 
                     u.vx *= -1; 
-                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 4); u.spd = u.baseSpd + u.turboBonus; }
+                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 9); u.spd = u.baseSpd + u.turboBonus; }
                 }
                 if(u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) { 
                     u.vy *= -1; 
-                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 4); u.spd = u.baseSpd + u.turboBonus; }
+                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 9); u.spd = u.baseSpd + u.turboBonus; }
                 }
 
                 // COLLISIONS
@@ -216,6 +216,14 @@
                         let angle = Math.atan2(dy, dx);
                         u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
                         o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
+                        if(u.turboBonus > 0) {
+                            u.turboBonus = 0;
+                            u.spd = u.baseSpd;
+                        }
+                        if(o.turboBonus > 0) {
+                            o.turboBonus = 0;
+                            o.spd = o.baseSpd;
+                        }
                         if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
                     }
                 });
@@ -264,6 +272,11 @@
         function hit(u, t) {
             if (t.dead) return;
             let d = u.atk;
+            if (u.turboBonus > 0) {
+                    let damageMultiplier = 1 + (u.turboBonus * 0.5); 
+                    d *= damageMultiplier;
+                    showFx(u, "CRIT! " + Math.round(d), "#ffff00"); // Affiche un petit texte jaune
+                }
             const uT = getTier(u.power);
             const tT = getTier(t.power);
 
