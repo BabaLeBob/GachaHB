@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB - Fix Final</title>
+    <title>GachaHB - Fix Final Complet</title>
     <style>
         :root { --bg: #1a1b1e; --arena: #2f3136; --p-color: #5865f2; --e-color: #f04747; }
         body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
@@ -14,14 +14,14 @@
 
         .unit { 
             width: 60px; height: 60px; position: absolute; 
-            /* On force l'image à rester dans le cadre sans disparaître */
             background-size: contain !important; 
             background-repeat: no-repeat !important; 
             background-position: center !important;
-            background-color: #3a3c42; /* Gris foncé si l'image ne charge pas */
+            background-color: #3a3c42;
             border-radius: 12px; border: 3px solid white;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2;
             display: flex; align-items: center; justify-content: center;
+            transition: filter 0.3s;
         }
         .team-player { border-color: var(--p-color); }
         .team-enemy { border-color: var(--e-color); }
@@ -29,8 +29,7 @@
         .hp-container { position: absolute; top: -15px; width: 100%; height: 6px; background: #000; border-radius: 3px; }
         .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; transition: width 0.2s; }
         
-        /* État Paralysé (Aura Stase) */
-        .paralyzed { filter: brightness(0.4) saturate(0) blue; opacity: 0.8; border-style: dotted !important; }
+        .paralyzed { filter: brightness(0.4) saturate(0) !important; opacity: 0.8; border-style: dotted !important; }
         
         .shield-fx { position: absolute; width: 80px; height: 80px; border: 2px solid #00bfff; border-radius: 50%; top: -13px; left: -13px; pointer-events: none; background: rgba(0, 191, 255, 0.1); animation: pulse 2s infinite; display: none; }
         .berserk-fx { position: absolute; width: 100%; height: 100%; box-shadow: 0 0 15px #ff0000; border-radius: 10px; display: none; animation: flash 0.5s infinite; }
@@ -42,8 +41,8 @@
         .explosion { position: absolute; background: radial-gradient(circle, orange, transparent); border-radius: 50%; animation: blast 0.5s forwards; z-index: 1; }
         @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(4); opacity: 0; } }
         
-        .effect-text { position: absolute; font-weight: bold; font-size: 20px; pointer-events: none; z-index: 20; animation: floatUp 0.8s forwards; }
-        @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+        .effect-text { position: absolute; font-weight: bold; font-size: 22px; pointer-events: none; z-index: 20; animation: floatUp 0.8s forwards; text-shadow: 1px 1px 2px black; }
+        @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-50px); opacity: 0; } }
 
         button { padding: 12px 25px; font-size: 18px; cursor: pointer; background: var(--p-color); color: white; border: none; border-radius: 5px; margin-top: 10px; }
     </style>
@@ -79,7 +78,7 @@
 
                 battleActive = true;
                 requestAnimationFrame(update);
-            } catch(e) { alert("Erreur de chargement des JSON ! Vérifie tes fichiers."); }
+            } catch(e) { alert("Erreur de chargement des JSON !"); }
         }
 
         function spawn(id, base, stat, x, y, team) {
@@ -87,28 +86,16 @@
             
             const u = {
                 id, team, x, y, hp: stat.hp, maxHp: stat.hp, atk: stat.atk, baseAtk: stat.atk,
-                range: stat.rng * 80, as: stat.as, spd: stat.spd, power: stat.power,
+                range: stat.rng * 80, as: stat.as, spd: stat.spd, power: stat.power || "none",
                 vx: (team === 'team-player' ? 1 : -1) * stat.spd, vy: (Math.random()-0.5) * stat.spd,
-                lastAtk: 0, lastTick: Date.now(), poisonTicks: 0, burnTicks: 0, isParalyzed: false,
-                dead: false
+                lastAtk: 0, lastTick: Date.now(), poisonTicks: 0, burnTicks: 0, frostTicks: 0,
+                isParalyzed: false, dead: false, baseSpd: stat.spd, turboBonus: 0
             };
-
-            u.frostTicks = 0;
-            u.baseSpd = stat.spd; // On garde la vitesse de base pour le Givre et le Turbo
-            u.turboBonus = 0;
 
             const el = document.createElement('div');
             el.className = `unit ${team}`;
-
-            // --- CORRECTION DU CHEMIN D'IMAGE ---
-            // On enlève "Carte/" si c'est déjà présent pour ne pas l'avoir en double
             let cleanImgName = base.img.replace('Carte/', '');
-            let finalPath = 'Carte/' + cleanImgName;
-            
-            // Debug console pour vérifier les chemins (fais F12 en jeu pour voir)
-            console.log("Chargement unité:", id, "Image:", finalPath);
-            
-            el.style.backgroundImage = `url('${encodeURI(finalPath)}')`;
+            el.style.backgroundImage = `url('Carte/${encodeURI(cleanImgName)}')`;
             
             el.innerHTML = `
                 <div class="hp-container"><div class="hp-bar"></div></div>
@@ -122,7 +109,7 @@
             u.shieldEl = el.querySelector('.shield-fx');
             u.berserkEl = el.querySelector('.berserk-fx');
             
-            if(u.power && u.power.startsWith("tank")) u.shieldEl.style.display = "block";
+            if(u.power.startsWith("tank")) u.shieldEl.style.display = "block";
             
             units.push(u);
         }
@@ -133,16 +120,13 @@
             units.forEach(u => {
                 if(u.dead) return;
 
-                // 1. GESTION DES HP ET MORT
                 if(u.hp <= 0) { die(u); return; }
 
-                // 2. SCAN DE L'AURA DE STASE
-                let previouslyParalyzed = u.isParalyzed;
-                u.isParalyzed = false;
-
-                // --- POUVOIR MÉDIC (Soin de zone) ---
+                // --- GESTION DES TICKS (UNE FOIS PAR SECONDE) ---
                 if (Date.now() - u.lastTick > 1000) {
-                    if (u.power && u.power.startsWith("medic")) {
+                    
+                    // 1. MEDIC (Soin)
+                    if (u.power.startsWith("medic")) {
                         const soin = getTier(u.power) * 5 + 5;
                         units.forEach(allie => {
                             if (!allie.dead && allie.team === u.team && getDist(u, allie) < 180) {
@@ -154,117 +138,91 @@
                         });
                     }
 
-                    // Reset du Givre
+                    // 2. VENIN (Dégâts continus)
+                    if (u.poisonTicks > 0) {
+                        u.hp -= 7; // Dégâts de poison
+                        u.poisonTicks--;
+                        showFx(u, "🤢", "#4ecb71");
+                    }
+
+                    // 3. BRÛLURE (Dégâts continus)
+                    if (u.burnTicks > 0) {
+                        u.hp -= 10; // Dégâts de feu
+                        u.burnTicks--;
+                        showFx(u, "🔥", "#ff5f00");
+                    }
+
+                    // 4. GIVRE (Ralentissement)
                     if (u.frostTicks > 0) {
                         u.frostTicks--;
                         if (u.frostTicks <= 0) {
-                            u.spd = u.baseSpd + (u.turboBonus || 0); // Rend la vitesse (incluant turbo)
+                            u.spd = u.baseSpd + u.turboBonus;
                             u.el.style.filter = "none";
                         }
                     }
+
                     u.lastTick = Date.now();
                 }
 
-                // --- POUVOIR TURBO (Rebonds) ---
-                // Dans la section des collisions murs et unités, là où tu changes u.vx/u.vy :
-                if (u.power && u.power.startsWith("turbo")) {
-                    u.turboBonus = Math.min(u.turboBonus + 0.2, 3); // Gagne 0.2 spd par rebond (max +3)
-                    u.spd = u.baseSpd + u.turboBonus;
-                    // On met à jour vx/vy pour refléter la nouvelle vitesse
-                    let angle = Math.atan2(u.vy, u.vx);
-                    u.vx = Math.cos(angle) * u.spd;
-                    u.vy = Math.sin(angle) * u.spd;
-                }
-                
-                // RÈGLE : Si "u" possède lui-même le pouvoir Aura, il est immunisé
-                const isAuraUser = u.power && u.power.startsWith("aura_stop");
-
-                if (!isAuraUser) {
+                // --- STASE / PARALYSIE ---
+                let prevPara = u.isParalyzed;
+                u.isParalyzed = false;
+                if (!(u.power.startsWith("aura_stop"))) {
                     units.forEach(owner => {
-                        // On vérifie que le lanceur est vivant, ennemi, et a activé son aura (PV < 50%)
-                        if(!owner.dead && owner.team !== u.team && owner.power && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
-                            if(getDist(u, owner) < 150) {
-                                u.isParalyzed = true;
-                            }
+                        if(!owner.dead && owner.team !== u.team && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
+                            if(getDist(u, owner) < 150) u.isParalyzed = true;
                         }
                     });
                 }
 
                 if(u.isParalyzed) {
                     u.el.classList.add('paralyzed');
-                    // On ne met pas vx/vy à 0 ici, on bloque juste le mouvement plus bas
                 } else {
                     u.el.classList.remove('paralyzed');
-                    
-                    // SÉCURITÉ : Si on vient juste de sortir de paralysie, on s'assure d'avoir une direction
-                    if (previouslyParalyzed || (u.vx === 0 && u.vy === 0)) {
-                        let angle = Math.random() * Math.PI * 2;
-                        u.vx = Math.cos(angle) * u.spd;
-                        u.vy = Math.sin(angle) * u.spd;
+                    if (prevPara || (u.vx === 0 && u.vy === 0)) {
+                        let ang = Math.random() * Math.PI * 2;
+                        u.vx = Math.cos(ang) * u.spd; u.vy = Math.sin(ang) * u.spd;
                     }
-
-                    // MOUVEMENT (Uniquement si non paralysé)
-                    u.x += u.vx; 
-                    u.y += u.vy;
-
-                    // REBONDS MURS
-                    if(u.x <= 0) { u.x = 2; u.vx = u.spd; }
-                    else if(u.x >= ARENA_W - UNIT_SIZE) { u.x = ARENA_W - UNIT_SIZE - 2; u.vx = -u.spd; }
-                    if(u.y <= 0) { u.y = 2; u.vy = u.spd; }
-                    else if(u.y >= ARENA_H - UNIT_SIZE) { u.y = ARENA_H - UNIT_SIZE - 2; u.vy = -u.spd; }
+                    u.x += u.vx; u.y += u.vy;
                 }
 
-                // 3. COLLISION (On les fait rebondir même s'ils sont paralysés pour éviter les empilements)
+                // REBONDS ET TURBO
+                if(u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) { 
+                    u.vx *= -1; 
+                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 4); u.spd = u.baseSpd + u.turboBonus; }
+                }
+                if(u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) { 
+                    u.vy *= -1; 
+                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 4); u.spd = u.baseSpd + u.turboBonus; }
+                }
+
+                // COLLISIONS
                 units.forEach(o => {
                     if(o === u || o.dead) return;
                     let dx = o.x - u.x, dy = o.y - u.y, dist = Math.sqrt(dx*dx + dy*dy);
                     if(dist < UNIT_SIZE - 5) {
                         let angle = Math.atan2(dy, dx);
-                        // Rebond simple
                         u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
                         o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
-                        
-                        // Contagion Brûlure
                         if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
-                        
-                        // Anti-chevauchement immédiat
-                        if(!u.isParalyzed) { u.x -= Math.cos(angle) * 2; u.y -= Math.sin(angle) * 2; }
                     }
                 });
 
-                // 4. TICKS (Dégâts sur la durée : Venin et Brûlure)
-                if (Date.now() - u.lastTick > 1000) {
-                    if (u.poisonTicks > 0 && !u.dead) {
-                        let poisonDmg = 5; // Tu peux varier selon le tier si tu veux
-                        u.hp -= poisonDmg;
-                        u.poisonTicks--;
-                        showFx(u, "🤢", "#4ecb71");
-                    }
-                    if (u.burnTicks > 0 && !u.dead) {
-                        u.hp -= 8;
-                        u.burnTicks--;
-                        showFx(u, "🔥", "#ff5f00");
-                    }
-                    // ON NE MET À JOUR lastTick QU'ICI !
-                    u.lastTick = Date.now();
-                }
-
-                // 5. BERSERK FX
-                if(u.power && u.power.startsWith("berserk")) {
+                // BERSERK
+                if(u.power.startsWith("berserk")) {
                     if(u.hp < u.maxHp * 0.4) {
                         u.atk = u.baseAtk * (1 + getTier(u.power)*0.4);
                         u.berserkEl.style.display = "block";
                     } else { u.atk = u.baseAtk; u.berserkEl.style.display = "none"; }
                 }
 
-                // 6. COMBAT IA
+                // IA COMBAT
                 let enemies = units.filter(e => !e.dead && e.team !== u.team);
                 let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
                 if(target && getDist(u, target) <= u.range && !u.isParalyzed) {
                     if(Date.now() - u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
                 }
 
-                // Appliquer Visuels
                 u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px";
                 u.hpBar.style.width = Math.max(0, (u.hp / u.maxHp) * 100) + "%";
             });
@@ -297,40 +255,38 @@
             const uT = getTier(u.power);
             const tT = getTier(t.power);
 
-            // --- CALCUL DES RÉDUCTIONS / BONUS ---
-            if (t.power && t.power.startsWith("phalanx")) {
-                let alliesProches = units.filter(a => !a.dead && a.team === t.team && a !== t && getDist(t, a) < 100).length;
-                d *= (1 - (alliesProches * 0.20));
+            if (t.power.startsWith("phalanx")) {
+                let neighbors = units.filter(a => !a.dead && a.team === t.team && a !== t && getDist(t, a) < 100).length;
+                d *= (1 - (neighbors * 0.20));
             }
 
-            if (u.power.startsWith("piercing")) { 
-                if (t.power.startsWith("tank")) d *= (1 + uT * 0.25); 
-            } else if (t.power && t.power.startsWith("tank")) {
-                d *= (1 - tT * 0.2);
+            if (u.power.startsWith("piercing") && t.power.startsWith("tank")) d *= (1 + uT * 0.25); 
+            else if (t.power.startsWith("tank")) d *= (1 - tT * 0.2);
+            
+            if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1 + uT * 0.5);
+
+            // Applique les Ticks
+            if(u.power.startsWith("poison")) { t.poisonTicks = 5; showFx(t, "POISON!", "#4ecb71"); }
+            if(u.power.startsWith("burn")) { t.burnTicks = 5; showFx(t, "FEU!", "#ff5f00"); }
+            if(u.power.startsWith("frost")) {
+                t.frostTicks = 5;
+                t.spd = t.baseSpd * (1 - (uT * 0.2 + 0.2));
+                t.el.style.filter = "hue-rotate(180deg) brightness(1.5)";
             }
 
-            if (u.power.startsWith("sniper") && getDist(u, t) > 250) d *= (1 + uT * 0.5);
-
-            // --- APPLICATION DES EFFETS (Venin / Brûlure) ---
-            if (u.power.startsWith("poison")) {
-                t.poisonTicks = 5; // Applique 5 secondes de venin
-            }
-            if (u.power.startsWith("burn")) {
-                t.burnTicks = 5; 
-            }
-            if (u.power.startsWith("vampire")) {
-                u.hp = Math.min(u.maxHp, u.hp + (d * 0.2));
+            if(u.power.startsWith("knockback")) {
+                let ang = Math.atan2(t.y - u.y, t.x - u.x);
+                t.x += Math.cos(ang) * 30; t.y += Math.sin(ang) * 30;
             }
 
-            // --- APPLICATION DES DÉGÂTS (Une seule fois !) ---
+            if(u.power.startsWith("vampire")) u.hp = Math.min(u.maxHp, u.hp + (d*0.2));
+
             t.hp -= d;
-            showFx(t, Math.floor(d), "#fff"); // Affiche les dégâts physiques
         }
 
         function die(u) {
             if(u.dead) return;
-            u.dead = true;
-            u.el.style.display = "none";
+            u.dead = true; u.el.style.display = "none";
             if(u.power.startsWith("last_blast")) {
                 const ex = document.createElement('div');
                 ex.className = "explosion";
@@ -345,7 +301,7 @@
         function showFx(u, txt, col) {
             const f = document.createElement('div');
             f.className = "effect-text"; f.style.color = col; f.innerText = txt;
-            f.style.left = u.x + "px"; f.style.top = u.y + "px";
+            f.style.left = u.x + "px"; f.style.top = (u.y - 20) + "px";
             document.getElementById('arena').appendChild(f);
             setTimeout(() => f.remove(), 800);
         }
