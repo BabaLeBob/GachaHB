@@ -2,5 +2,129 @@
     "bot_trainer": {
         "pseudo": "Maître de l'Arène",
         "units": ["001", "002", "003", "004", "005"]
+    },
+    "bot_trainer": {
+        "pseudo": "Maître de l'Arène",
+        "units": ["001", "002", "003", "004", "005"]
+    },
+    "trainer_01": {
+        "pseudo": "Recrue du Lotus",
+        "units": ["001", "007", "008", "009", "002"]
+    },
+    "trainer_02": {
+        "pseudo": "Garde d'Avalon",
+        "units": ["040", "041", "022", "020", "011"]
+    },
+    "trainer_03": {
+        "pseudo": "Escouade de Ben",
+        "units": ["031", "037", "S06", "031", "037"]
+    },
+    "trainer_04": {
+        "pseudo": "L'Éclat de Maxine",
+        "units": ["011", "011", "021", "010", "008"]
+    },
+    "trainer_05": {
+        "pseudo": "Force Juste",
+        "units": ["019", "022", "025", "035", "040"]
+    },
+    "trainer_06": {
+        "pseudo": "Sorcier du Concile",
+        "units": ["C01", "C02", "C03", "C01", "C02"]
+    },
+    "trainer_07": {
+        "pseudo": "L'Ombre du Typhon",
+        "units": ["018", "024", "025", "001", "007"]
+    },
+    "trainer_08": {
+        "pseudo": "Légende des Astres",
+        "units": ["029", "027", "003", "012", "005"]
+    },
+    "trainer_09": {
+        "pseudo": "Duo des Étoiles",
+        "units": ["003", "012", "013", "027", "S03"]
+    },
+    "trainer_10": {
+        "pseudo": "Collectionneur OP",
+        "units": ["OP004", "OP006", "OP011", "OP012", "OP001"]
+    },
+    "trainer_11": {
+        "pseudo": "Maitresse des Marées",
+        "units": ["010", "034", "010", "034", "002"]
+    },
+    "trainer_12": {
+        "pseudo": "Arbitre de la Bête",
+        "units": ["016", "017", "016", "017", "004"]
+    },
+    "trainer_13": {
+        "pseudo": "Flamme de Tsuki",
+        "units": ["008", "028", "014", "028", "008"]
+    },
+    "trainer_14": {
+        "pseudo": "Vildiur le Sombre",
+        "units": ["OP028", "OP010", "OP025", "OP016", "OP001"]
+    },
+    "trainer_15": {
+        "pseudo": "Élite du Concile",
+        "units": ["C05", "C04", "C03", "C06", "C05"]
+    },
+    "trainer_16": {
+        "pseudo": "Dresseur de Caleb",
+        "units": ["042", "042", "003", "015", "019"]
+    },
+    "trainer_17": {
+        "pseudo": "Héritières du Destin",
+        "units": ["039", "038", "026", "011", "005"]
+    },
+    "trainer_18": {
+        "pseudo": "L'Apprentie et l'Augure",
+        "units": ["038", "005", "027", "038", "005"]
+    },
+    "trainer_19": {
+        "pseudo": "Amants Feu-Glacé",
+        "units": ["014", "008", "025", "028", "025"]
+    },
+    "trainer_20": {
+        "pseudo": "Guerrier Secret",
+        "units": ["S01", "S02", "S03", "S07", "S05"]
+    },
+    "trainer_21": {
+        "pseudo": "Vacancier de l'Apocalypse",
+        "units": ["S04", "S04", "032", "004", "018"]
+    },
+    "trainer_22": {
+        "pseudo": "Amnésique Perdu",
+        "units": ["007", "007", "001", "001", "006"]
+    },
+    "trainer_23": {
+        "pseudo": "Protecteur Valendias",
+        "units": ["032", "035", "019", "022", "030"]
+    },
+    "trainer_24": {
+        "pseudo": "Utahime Fan",
+        "units": ["OP027", "OP027", "OP024", "OP020", "OP013"]
+    },
+    "trainer_25": {
+        "pseudo": "Bataillon de Ryh",
+        "units": ["016", "016", "016", "017", "017"]
+    },
+    "trainer_26": {
+        "pseudo": "Muzalt le Mythique",
+        "units": ["004", "004", "001", "007", "031"]
+    },
+    "trainer_27": {
+        "pseudo": "L'Éxaltée Solanea",
+        "units": ["021", "026", "021", "026", "039"]
+    },
+    "trainer_28": {
+        "pseudo": "Lame d'Alabryan",
+        "units": ["015", "015", "040", "019", "022"]
+    },
+    "trainer_29": {
+        "pseudo": "Shinseina de l'Ombre",
+        "units": ["024", "024", "001", "020", "030"]
+    },
+    "trainer_30": {
+        "pseudo": "Maître du Néant",
+        "units": ["OP001", "OP023", "OP025", "OP016", "OP002"]
     }
 }
