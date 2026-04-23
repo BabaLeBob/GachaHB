@@ -67,18 +67,30 @@
             const cb = "?t=" + Date.now();
             
             try {
-                const [rS, rSt, rA] = await Promise.all([fetch('shop.json'+cb), fetch('stats.json'+cb), fetch('armies.json'+cb)]);
+                const [rS, rSt, rA] = await Promise.all([
+                    fetch('shop.json' + cb), 
+                    fetch('stats.json' + cb), 
+                    fetch('armies.json' + cb)
+                ]);
                 const shop = await rS.json(), stats = await rSt.json(), armies = await rA.json();
                 
                 const myArmyIds = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
-                const enemyArmy = armies[Object.keys(armies)[0]].units;
+                
+                // --- LOGIQUE ALÉATOIRE ICI ---
+                const keys = Object.keys(armies);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                const enemyArmy = armies[randomKey].units;
+                // -----------------------------
 
-                myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 150, 100 + (i*90), 'team-player'));
-                enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 850, 100 + (i*90), 'team-enemy'));
+                myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 150, 100 + (i * 90), 'team-player'));
+                enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 850, 100 + (i * 90), 'team-enemy'));
 
                 battleActive = true;
                 requestAnimationFrame(update);
-            } catch(e) { alert("Erreur de chargement des JSON !"); }
+            } catch(e) { 
+                console.error(e);
+                alert("Erreur de chargement des JSON !"); 
+            }
         }
 
         function spawn(id, base, stat, x, y, team) {
