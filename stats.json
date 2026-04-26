@@ -48,12 +48,12 @@
         "power": "none"
     },
     "019": {
-        "hp": 120,
-        "atk": 20,
+        "hp": 140,
+        "atk": 25,
         "rng": 1,
         "spd": 3,
         "as": 1500,
-        "power": "tank_1"
+        "power": "phalanx_1"
     },
     "020": {
         "hp": 100,
@@ -72,7 +72,7 @@
         "power": "none"
     },
     "025": {
-        "hp": 100,
+        "hp": 110,
         "atk": 15,
         "rng": 1,
         "spd": 5,
@@ -88,11 +88,11 @@
         "power": "none"
     },
     "031": {
-        "hp": 100,
-        "atk": 15,
+        "hp": 115,
+        "atk": 18,
         "rng": 1,
         "spd": 5,
-        "as": 1000,
+        "as": 1200,
         "power": "none"
     },
     "035": {
@@ -109,7 +109,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "last_blast_1"
     },
     "002": {
         "hp": 100,
@@ -121,11 +121,11 @@
     },
     "011": {
         "hp": 100,
-        "atk": 25,
+        "atk": 30,
         "rng": 2,
         "spd": 5,
         "as": 1000,
-        "power": "piercing_2"
+        "power": "piercing_3"
     },
     "015": {
         "hp": 100,
@@ -136,11 +136,11 @@
         "power": "burn_1"
     },
     "021": {
-        "hp": 110,
+        "hp": 125,
         "atk": 15,
         "rng": 1,
         "spd": 5,
-        "as": 1000,
+        "as": 1300,
         "power": "burn_2"
     },
     "023": {
@@ -165,10 +165,10 @@
         "rng": 1,
         "spd": 0,
         "as": 1000,
-        "power": "none"
+        "power": "phalanx_1"
     },
     "038": {
-        "hp": 170,
+        "hp": 140,
         "atk": 20,
         "rng": 1,
         "spd": 5,
@@ -209,14 +209,14 @@
     },
     "024": {
         "hp": 100,
-        "atk": 15,
+        "atk": 20,
         "rng": 1,
-        "spd": 9,
+        "spd": 12,
         "as": 500,
         "power": "turbo_1"
     },
     "028": {
-        "hp": 150,
+        "hp": 110,
         "atk": 15,
         "rng": 1,
         "spd": 5,
@@ -235,17 +235,17 @@
         "hp": 100,
         "atk": 15,
         "rng": 1,
-        "spd": 5,
+        "spd": 0,
         "as": 1000,
-        "power": "none"
+        "power": "last_blast_3"
     },
     "034": {
-        "hp": 100,
-        "atk": 15,
-        "rng": 1,
+        "hp": 30,
+        "atk": 20,
+        "rng": 25,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "sniper_3"
     },
     "037": {
         "hp": 100,
@@ -269,7 +269,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "aura_stop_1"
     },
     "013": {
         "hp": 100,
@@ -293,7 +293,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "berserk_1"
     },
     "032": {
         "hp": 100,
@@ -312,7 +312,7 @@
         "power": "none"
     },
     "005": {
-        "hp": 100,
+        "hp": 150,
         "atk": 15,
         "rng": 1,
         "spd": 5,
@@ -320,7 +320,7 @@
         "power": "none"
     },
     "018": {
-        "hp": 100,
+        "hp": 200,
         "atk": 15,
         "rng": 1,
         "spd": 5,
@@ -389,7 +389,7 @@
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "phalanx_1"
     },
     "C01": {
         "hp": 100,
@@ -400,12 +400,12 @@
         "power": "poison_3"
     },
     "C02": {
-        "hp": 100,
+        "hp": 130,
         "atk": 15,
         "rng": 1,
         "spd": 5,
         "as": 1000,
-        "power": "none"
+        "power": "berserk_1"
     },
     "C03": {
         "hp": 100,
