@@ -1,0 +1,50 @@
+{
+    "A001": {
+        "nom": "Poing de Feu",
+        "puissance": 75,
+        "type": "Feu",
+        "categorie": "Physique"
+    },
+    "A002": {
+        "nom": "Tranche-Herbe",
+        "puissance": 55,
+        "type": "Plante",
+        "categorie": "Physique"
+    },
+    "A003": {
+        "nom": "Hydrocanon",
+        "puissance": 110,
+        "type": "Eau",
+        "categorie": "Special"
+    },
+    "A004": {
+        "nom": "Onde de Choc",
+        "puissance": 60,
+        "type": "Electrique",
+        "categorie": "Special"
+    },
+    "A005": {
+        "nom": "Lame de Fond",
+        "puissance": 90,
+        "type": "Tranche",
+        "categorie": "Physique"
+    },
+    "A006": {
+        "nom": "Direct Toxik",
+        "puissance": 80,
+        "type": "Poison",
+        "categorie": "Physique"
+    },
+    "A007": {
+        "nom": "Vibrobscur",
+        "puissance": 80,
+        "type": "T\u00e9n\u00e8bre",
+        "categorie": "Special"
+    },
+    "A008": {
+        "nom": "Jet-Pierres",
+        "puissance": 50,
+        "type": "Roche",
+        "categorie": "Physique"
+    }
+}

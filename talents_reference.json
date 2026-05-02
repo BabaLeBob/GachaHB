@@ -1,0 +1,14 @@
+{
+    "T001": {
+        "nom": "Colosse",
+        "desc": "Double l'Attaque."
+    },
+    "T002": {
+        "nom": "L\u00e9vitation",
+        "desc": "Immunise contre le type Roche."
+    },
+    "T003": {
+        "nom": "Brasier",
+        "desc": "Boost Feu quand PV bas."
+    }
+}

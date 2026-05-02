@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Configuration Combat</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #eee; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; }
+        .section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        select, input { width: 100%; padding: 10px; margin-top: 5px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px; box-sizing: border-box; }
+        label { font-size: 0.9em; color: #bbb; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        #output { background: #000; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; margin-top: 20px; max-height: 300px; overflow-y: auto; }
+        .title { color: #00d4ff; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Admin Combat Card</h1>
+    
+    <div class="section">
+        <label>ID de la carte (ex: 003)</label>
+        <input type="text" id="card-id" placeholder="ID de la carte dans shop.json">
+    </div>
+
+    <div class="section">
+        <label>Types Élémentaires</label>
+        <div class="grid">
+            <select id="type1">
+                <option value="Poing">Poing</option><option value="Tranche">Tranche</option><option value="Feu">Feu</option>
+                <option value="Glace">Glace</option><option value="Plante">Plante</option><option value="Eau">Eau</option>
+                <option value="Roche">Roche</option><option value="Electrique">Electrique</option><option value="Ténèbre">Ténèbre</option><option value="Poison">Poison</option>
+            </select>
+            <select id="type2">
+                <option value="Aucun">Aucun</option><option value="Poing">Poing</option><option value="Tranche">Tranche</option><option value="Feu">Feu</option>
+                <option value="Glace">Glace</option><option value="Plante">Plante</option><option value="Eau">Eau</option>
+                <option value="Roche">Roche</option><option value="Electrique">Electrique</option><option value="Ténèbre">Ténèbre</option><option value="Poison">Poison</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Statistiques (Base Stats)</label>
+        <div class="grid">
+            <div><label>PV</label><input type="number" id="pv" value="100"></div>
+            <div><label>Vitesse</label><input type="number" id="vit" value="100"></div>
+            <div><label>Attaque</label><input type="number" id="atk" value="100"></div>
+            <div><label>Attaque Spé</label><input type="number" id="spa" value="100"></div>
+            <div><label>Défense</label><input type="number" id="def" value="100"></div>
+            <div><label>Défense Spé</label><input type="number" id="spd" value="100"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Attaques (Sélectionner 4)</label>
+        <div class="grid">
+            <select id="atk1"></select><select id="atk2"></select>
+            <select id="atk3"></select><select id="atk4"></select>
+        </div>
+        <label style="margin-top:10px; display:block;">Talent</label>
+        <select id="talent"></select>
+    </div>
+
+    <button onclick="saveCard()">Ajouter au JSON</button>
+    <button style="background: #28a745;" onclick="downloadJSON()">Télécharger cards_battle_data.json</button>
+
+    <div id="output">{}</div>
+</div>
+
+<script>
+    const attaques = {"A001": {"nom": "Poing de Feu", "puissance": 75, "type": "Feu", "categorie": "Physique"}, "A002": {"nom": "Tranche-Herbe", "puissance": 55, "type": "Plante", "categorie": "Physique"}, "A003": {"nom": "Hydrocanon", "puissance": 110, "type": "Eau", "categorie": "Special"}, "A004": {"nom": "Onde de Choc", "puissance": 60, "type": "Electrique", "categorie": "Special"}, "A005": {"nom": "Lame de Fond", "puissance": 90, "type": "Tranche", "categorie": "Physique"}, "A006": {"nom": "Direct Toxik", "puissance": 80, "type": "Poison", "categorie": "Physique"}, "A007": {"nom": "Vibrobscur", "puissance": 80, "type": "T\u00e9n\u00e8bre", "categorie": "Special"}, "A008": {"nom": "Jet-Pierres", "puissance": 50, "type": "Roche", "categorie": "Physique"}};
+    const talents = {"T001": {"nom": "Colosse", "desc": "Double l'Attaque."}, "T002": {"nom": "L\u00e9vitation", "desc": "Immunise contre le type Roche."}, "T003": {"nom": "Brasier", "desc": "Boost Feu quand PV bas."}};
+    let masterData = {};
+
+    // Remplissage auto des listes
+    const populate = () => {
+        const atkSelects = [document.getElementById('atk1'), document.getElementById('atk2'), document.getElementById('atk3'), document.getElementById('atk4')];
+        atkSelects.forEach(s => {
+            for(let id in attaques) {
+                let opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `${attaques[id].nom} (${attaques[id].type})`;
+                s.appendChild(opt);
+            }
+        });
+        const tSel = document.getElementById('talent');
+        for(let id in talents) {
+            let opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = talents[id].nom;
+            tSel.appendChild(opt);
+        }
+    };
+
+    const saveCard = () => {
+        const id = document.getElementById('card-id').value;
+        if(!id) return alert("Mettez un ID !");
+        
+        masterData[id] = {
+            types: [document.getElementById('type1').value, document.getElementById('type2').value].filter(t => t !== "Aucun"),
+            stats: {
+                hp: parseInt(document.getElementById('pv').value),
+                atk: parseInt(document.getElementById('atk').value),
+                spa: parseInt(document.getElementById('spa').value),
+                def: parseInt(document.getElementById('def').value),
+                spd: parseInt(document.getElementById('spd').value),
+                spe: parseInt(document.getElementById('vit').value)
+            },
+            moves: [
+                document.getElementById('atk1').value,
+                document.getElementById('atk2').value,
+                document.getElementById('atk3').value,
+                document.getElementById('atk4').value
+            ],
+            talent: document.getElementById('talent').value
+        };
+        document.getElementById('output').textContent = JSON.stringify(masterData, null, 4);
+    };
+
+    const downloadJSON = () => {
+        const blob = new Blob([JSON.stringify(masterData, null, 4)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "cards_battle_data.json";
+        a.click();
+    };
+
+    populate();
+</script>
+</body>
+</html>
