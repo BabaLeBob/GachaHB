@@ -38,32 +38,50 @@
 
 <script>
     let selectedCards = [];
-    let cardsData = {};
+    let fullCardsDatabase = {}; // Contiendra la fusion des stats et des noms
 
     async function loadCards() {
         const grid = document.getElementById('available-cards');
         try {
-            const response = await fetch('cards_battle_data.json');
-            if (!response.ok) throw new Error("Fichier JSON non trouvé");
-            
-            cardsData = await response.json();
-            grid.innerHTML = ""; // Vider le message de chargement
+            // 1. Chargement des deux fichiers en parallèle[cite: 8]
+            const [battleRes, shopRes] = await Promise.all([
+                fetch('cards_battle_data.json'),
+                fetch('shop.json')
+            ]);
 
-            for (let id in cardsData) {
-                const card = cardsData[id];
+            if (!battleRes.ok || !shopRes.ok) throw new Error("Fichier JSON manquant");
+
+            const battleData = await battleRes.json();
+            const shopData = await shopRes.json();
+
+            grid.innerHTML = ""; 
+
+            // 2. Fusion des données pour chaque ID
+            for (let id in battleData) {
+                const stats = battleData[id];
+                const info = shopData[id] || { nom: "Inconnu", img: "default.png" }; // Secours si l'ID manque dans shop.json
+
+                // On stocke la fusion pour plus tard (sauvegarde équipe)
+                fullCardsDatabase[id] = { ...stats, ...info };
+
                 const div = document.createElement('div');
                 div.className = 'card';
                 div.id = `card-${id}`;
                 
-                let typesHtml = card.types.map(t => `<span class="type-pill">${t}</span>`).join("");
+                let typesHtml = stats.types.map(t => `<span class="type-pill">${t}</span>`).join("");
                 
+                // Affichage utilisant le nom du shop.json
                 div.innerHTML = `
-                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px;">${card.nom}</div>
+                    <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 5px;">${info.nom}</div>
+                    <div style="font-size: 0.8em; color: #e94560; margin-bottom: 5px;">ID: ${id}</div>
                     <div>${typesHtml}</div>
                     <div class="stat-line">
-                        <span>PV: ${card.stats.hp}</span>
-                        <span>ATK: ${card.stats.atk}</span>
-                        <span>VIT: ${card.stats.spe}</span>
+                        <span>PV: ${stats.stats.hp}</span>
+                        <span>ATK: ${stats.stats.atk}</span>
+                        <span>VIT: ${stats.stats.spa}</span>
+                        <span>PV: ${stats.stats.def}</span>
+                        <span>ATK: ${stats.stats.spd}</span>
+                        <span>VIT: ${stats.stats.spe}</span>
                     </div>
                 `;
                 
@@ -71,7 +89,7 @@
                 grid.appendChild(div);
             }
         } catch (error) {
-            grid.innerHTML = `<p style="color: #ff4d4d; font-weight: bold;">Erreur : Impossible de charger cards_battle_data.json.<br>Note : Vous devez utiliser un serveur local (Live Server) pour lire le fichier.</p>`;
+            grid.innerHTML = `<p style="color: #ff4d4d;">Erreur de chargement. Vérifiez que les deux fichiers JSON sont présents.</p>`;
             console.error(error);
         }
     }
@@ -93,13 +111,14 @@
     }
 
     function saveTeam() {
-        // On enregistre les données complètes de l'équipe pour le simulateur
-        const teamData = selectedCards.map(id => {
-            return { id: id, ...cardsData[id] };
-        });
+        // Sauvegarde de l'équipe avec les noms et les stats fusionnés
+        const teamToSave = selectedCards.map(id => ({
+            id: id,
+            ...fullCardsDatabase[id]
+        }));
         
-        localStorage.setItem('playerTeam', JSON.stringify(teamData));
-        alert("Équipe de " + selectedCards.length + " cartes prête ! Vous pouvez maintenant aller sur la page de combat.");
+        localStorage.setItem('playerTeam', JSON.stringify(teamToSave));
+        alert("Équipe validée avec les noms de shop.json !");
     }
 
     loadCards();
