@@ -91,7 +91,8 @@
                 return {
                     ...p,
                     img: info.img || "Carte/default.png", // Cherche l'image dans shop.json
-                    nom: info.nom || p.nom
+                    nom: info.nom || p.nom,
+                    status: null 
                 };
             });
 
@@ -104,7 +105,8 @@
                 botTeam.push({
                     id: "001",
                     nom: botInfo.nom,
-                    img: botInfo.img, // Cherche l'image dans shop.json
+                    img: botInfo.img,
+                    status: null, 
                     ...JSON.parse(JSON.stringify(botStats))
                 });
             }
@@ -133,13 +135,13 @@
         const c = botTeam[cIdx];
 
         // Player
-        document.getElementById('p-name').textContent = p.nom;
+        document.getElementById('p-name').textContent = p.nom + (p.status ? ` [${p.status}]` : "");
         document.getElementById('p-img').src = p.img;
         document.getElementById('p-hp-fill').style.width = (p.stats.hp / p.maxHp * 100) + "%";
         document.getElementById('p-hp-txt').textContent = p.stats.hp + "/" + p.maxHp;
 
         // Bot
-        document.getElementById('c-name').textContent = c.nom;
+        document.getElementById('c-name').textContent = c.nom + (c.status ? ` [${c.status}]` : "");
         document.getElementById('c-img').src = c.img;
         document.getElementById('c-hp-fill').style.width = (c.stats.hp / c.maxHp * 100) + "%";
         document.getElementById('c-hp-txt').textContent = c.stats.hp + "/" + c.maxHp;
@@ -172,15 +174,24 @@
         
         const p = playerTeam[pIdx];
         const c = botTeam[cIdx];
-        const move = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
 
-        // 1. Joueur attaque
-        const dmg = calc(move, p, c);
-        c.stats.hp = Math.max(0, c.stats.hp - dmg.total);
-        addLog(`${p.nom} utilise ${move.nom} !`);
-        if(dmg.multi > 1) addLog("C'est super efficace !", "#ffcc00");
+        // 1. TOUR DU JOUEUR
+        // On vérifie si le joueur n'est pas gelé avant d'attaquer
+        if (p.status !== "Gel") {
+            const move = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
+            const dmg = calc(move, p, c);
+            c.stats.hp = Math.max(0, c.stats.hp - dmg.total);
+            addLog(`${p.nom} utilise ${move.nom} !`);
+            if(dmg.multi > 1) addLog("C'est super efficace !", "#ffcc00");
+        } else {
+            addLog(`${p.nom} est gelé et ne peut pas attaquer !`, "#00ccff");[cite, 2]
+        }
+
+        // Effets de fin de tour pour le Joueur (Brulure / Guérison)
+        handleStatusEndOfTurn(p);
         updateUI();
 
+        // Vérification si le Bot est KO
         if(c.stats.hp <= 0) {
             addLog(`Le ${c.nom} adverse est K.O. !`, "#ff4444");
             cIdx++;
@@ -189,14 +200,24 @@
             return startTurn();
         }
 
-        // 2. Bot attaque
+        // 2. TOUR DU BOT
         await new Promise(r => setTimeout(r, 800));
-        const cMove = movesDB[c.moves[0]] || { nom: "Charge", puissance: 40, type: "Poing", cat: "Physique" };
-        const cdmg = calc(cMove, c, p);
-        p.stats.hp = Math.max(0, p.stats.hp - cdmg.total);
-        addLog(`${c.nom} réplique avec ${cMove.nom} !`, "#ff4444");
+        
+        // On vérifie si le bot n'est pas gelé avant de répliquer
+        if (c.status !== "Gel") {
+            const cMove = movesDB[c.moves[0]] || { nom: "Charge", puissance: 40, type: "Poing", cat: "Physique" };
+            const cdmg = calc(cMove, c, p);
+            p.stats.hp = Math.max(0, p.stats.hp - cdmg.total);
+            addLog(`${c.nom} réplique avec ${cMove.nom} !`, "#ff4444");
+        } else {
+            addLog(`${c.nom} est gelé et ne peut pas attaquer !`, "#00ccff");[cite, 2]
+        }
+
+        // Effets de fin de tour pour le Bot (Brulure / Guérison)
+        handleStatusEndOfTurn(c);
         updateUI();
 
+        // Vérification si le Joueur est KO
         if(p.stats.hp <= 0) {
             addLog(`${p.nom} est K.O. !`, "#ff4444");
             pIdx++;
@@ -215,6 +236,24 @@
         let mult = 1.0;
         d.types.forEach(t => { if(typeTable[m.type] && typeTable[m.type][t]) mult *= typeTable[m.type][t]; });
         return { total: Math.max(1, Math.floor(base * mult)), multi: mult };
+    }
+
+    function handleStatusEndOfTurn(char) {
+        if (!char.status) return;
+
+        // 1. Dégâts de Brulure[cite: 2]
+        if (char.status === "Brulure") {
+            char.stats.hp = Math.max(0, char.stats.hp - 10);
+            addLog(`${char.nom} brûle (-10 PV)`, "#ff6600");
+        }
+
+        // 2. Chances de partir (Random)[cite: 2]
+        const r = Math.random() * 100;
+        if (char.status === "Brulure" && r < 40) char.status = null;
+        if (char.status === "Gel" && r < 60) char.status = null;
+        if (char.status === "Paralysie" && r < 20) char.status = null;
+        
+        if (!char.status) addLog(`${char.nom} est guéri !`, "#00ff00");
     }
 
     initCombat();
