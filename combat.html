@@ -1,345 +1,142 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GachaHB - Fix Final Complet</title>
+    <title>Simulateur de Combat Gacha V2</title>
     <style>
-        :root { --bg: #1a1b1e; --arena: #2f3136; --p-color: #5865f2; --e-color: #f04747; }
-        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0b18; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #battle-arena { width: 850px; height: 450px; background: #16213e; border: 5px solid #533483; position: relative; border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.8); overflow: hidden; }
         
-        #arena { 
-            width: 1100px; height: 650px; background: var(--arena); margin: 15px auto; 
-            position: relative; border: 5px solid #444; border-radius: 15px; overflow: hidden;
-        }
-
-        .unit { 
-            width: 60px; height: 60px; position: absolute; 
-            background-size: contain !important; 
-            background-repeat: no-repeat !important; 
-            background-position: center !important;
-            background-color: #3a3c42;
-            border-radius: 12px; border: 3px solid white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2;
-            display: flex; align-items: center; justify-content: center;
-            transition: filter 0.3s;
-        }
-        .team-player { border-color: var(--p-color); }
-        .team-enemy { border-color: var(--e-color); }
-
-        .hp-container { position: absolute; top: -15px; width: 100%; height: 6px; background: #000; border-radius: 3px; }
-        .hp-bar { height: 100%; background: #43b581; width: 100%; border-radius: 3px; transition: width 0.2s; }
+        .fighter { width: 220px; position: absolute; text-align: center; transition: all 0.4s ease; }
+        #player-active { bottom: 40px; left: 80px; }
+        #cpu-active { top: 40px; right: 80px; }
         
-        .paralyzed { filter: brightness(0.4) saturate(0) !important; opacity: 0.8; border-style: dotted !important; }
+        .hp-container { background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; border: 1px solid #533483; }
+        .hp-bar { width: 100%; height: 12px; background: #444; border-radius: 6px; overflow: hidden; margin-top: 5px; }
+        .hp-inner { height: 100%; background: #00ff88; width: 100%; transition: width 0.5s ease; }
         
-        .shield-fx { position: absolute; width: 80px; height: 80px; border: 2px solid #00bfff; border-radius: 50%; top: -13px; left: -13px; pointer-events: none; background: rgba(0, 191, 255, 0.1); animation: pulse 2s infinite; display: none; }
-        .berserk-fx { position: absolute; width: 100%; height: 100%; box-shadow: 0 0 15px #ff0000; border-radius: 10px; display: none; animation: flash 0.5s infinite; }
+        .sprite { font-size: 80px; filter: drop-shadow(2px 4px 6px black); margin: 10px 0; }
         
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(1); opacity: 0.3; } }
-        @keyframes flash { from { opacity: 0.2; } to { opacity: 0.5; } }
-
-        .bullet { position: absolute; width: 10px; height: 10px; background: yellow; border-radius: 50%; box-shadow: 0 0 8px orange; z-index: 5; }
-        .explosion { position: absolute; background: radial-gradient(circle, orange, transparent); border-radius: 50%; animation: blast 0.5s forwards; z-index: 1; }
-        @keyframes blast { from { transform: scale(0); opacity: 1; } to { transform: scale(4); opacity: 0; } }
+        #log { width: 850px; height: 120px; background: rgba(0,0,0,0.9); border: 2px solid #533483; margin-top: 15px; padding: 15px; overflow-y: auto; font-family: 'Courier New', monospace; color: #00ffcc; font-size: 0.9em; box-sizing: border-box; }
         
-        .effect-text { position: absolute; font-weight: bold; font-size: 22px; pointer-events: none; z-index: 20; animation: floatUp 0.8s forwards; text-shadow: 1px 1px 2px black; }
-        @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-50px); opacity: 0; } }
-
-        button { padding: 12px 25px; font-size: 18px; cursor: pointer; background: var(--p-color); color: white; border: none; border-radius: 5px; margin-top: 10px; }
+        .controls { margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 850px; }
+        .atk-btn { padding: 15px; background: #16213e; border: 2px solid #e94560; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em; }
+        .atk-btn:hover { background: #e94560; transform: translateY(-2px); }
+        .atk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .type-badge { font-size: 0.7em; padding: 2px 5px; border-radius: 4px; margin-left: 5px; background: #533483; text-transform: uppercase; }
     </style>
 </head>
 <body>
+    <h1>Arène de Combat Gacha</h1>
 
-    <button onclick="initBattle()">LANCER LE COMBAT</button>
-    <div id="arena"></div>
+    <div id="battle-arena">
+        <div id="cpu-active" class="fighter">
+            <div class="hp-container">
+                <strong id="cpu-name">ORDINATEUR</strong>
+                <div class="hp-bar"><div id="cpu-hp" class="hp-inner"></div></div>
+                <small id="cpu-hp-text">100/100 PV</small>
+            </div>
+            <div class="sprite">👹</div>
+        </div>
 
-    <script>
-        let units = [];
-        let battleActive = false;
-        const UNIT_SIZE = 60;
-        const ARENA_W = 1100, ARENA_H = 650;
+        <div id="player-active" class="fighter">
+            <div class="sprite">⚔️</div>
+            <div class="hp-container">
+                <strong id="player-name">JOUEUR</strong>
+                <div class="hp-bar"><div id="player-hp" class="hp-inner"></div></div>
+                <small id="player-hp-text">100/100 PV</small>
+            </div>
+        </div>
+    </div>
 
-        function getTier(p) { return (!p || p === "none") ? 0 : parseInt(p.split('_').pop()) || 1; }
-        function getDist(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+    <div id="log">Initialisation des systèmes élémentaires...</div>
 
-        async function initBattle() {
-            const arena = document.getElementById('arena');
-            arena.innerHTML = ""; units = []; battleActive = false;
-            const cb = "?t=" + Date.now();
-            
-            try {
-                const [rS, rSt, rA] = await Promise.all([
-                    fetch('shop.json' + cb), 
-                    fetch('stats.json' + cb), 
-                    fetch('armies.json' + cb)
-                ]);
-                const shop = await rS.json(), stats = await rSt.json(), armies = await rA.json();
-                
-                const myArmyIds = JSON.parse(localStorage.getItem('myGachaArmy')) || [];
-                
-                // --- LOGIQUE ALÉATOIRE ICI ---
-                const keys = Object.keys(armies);
-                const randomKey = keys[Math.floor(Math.random() * keys.length)];
-                const enemyArmy = armies[randomKey].units;
-                // -----------------------------
+    <div class="controls" id="move-container"></div>
 
-                myArmyIds.forEach((id, i) => spawn(id, shop[id], stats[id], 150, 100 + (i * 90), 'team-player'));
-                enemyArmy.forEach((id, i) => spawn(id, shop[id], stats[id], 850, 100 + (i * 90), 'team-enemy'));
+<script>
+    const typeTable = {"Poing": {"glace": 2, "roche": 0.5}, "Tranche": {"Poing": 2, "Feu": 0.5, "plante": 2, "roche": 0.5, "electrique": 0.5}, "Feu": {"Tranche": 2, "Feu": 0.5, "glace": 2, "plante": 2, "Eau": 0.5, "roche": 0.5, "Poison": 0.5}, "glace": {"Feu": 0.5, "glace": 0.5, "Eau": 2, "roche": 2, "electrique": 2, "Poison": 0.5}, "plante": {"Feu": 0.5, "glace": 0.5, "plante": 2, "Eau": 0.5, "roche": 2, "electrique": 2, "Poison": 2}, "Eau": {"glace": 2, "plante": 0.5, "Eau": 0.5, "roche": 0.5, "Poison": 2}, "roche": {"Poing": 2, "Tranche": 2, "glace": 2, "plante": 0.5, "Eau": 0.5, "roche": 0.5, "electrique": 0.5}, "electrique": {"plante": 0.5, "Eau": 2, "roche": 0.5, "electrique": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 2}, "t\u00e9n\u00e8bre": {"Poing": 2, "glace": 0.5, "electrique": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 2}, "Poison": {"Feu": 2, "glace": 0.5, "plante": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 0.5}};
+    
+    // Données fictives pour test (à remplacer par ton JSON)
+    const movesDB = {
+        "A01": { nom: "Coup de Poing", puissance: 40, type: "Poing", cat: "Physique" },
+        "A02": { nom: "Tranche-Nuit", puissance: 70, type: "Tranche", cat: "Physique" },
+        "A03": { nom: "Boule de Feu", puissance: 90, type: "Feu", cat: "Special" },
+        "A04": { nom: "Éclair Noir", puissance: 80, type: "electrique", cat: "Special" }
+    };
 
-                battleActive = true;
-                requestAnimationFrame(update);
-            } catch(e) { 
-                console.error(e);
-                alert("Erreur de chargement des JSON !"); 
+    let pState = { hp: 150, maxHp: 150, stats: { atk: 100, def: 80, spa: 110, spd: 90 }, types: ["Feu", "Poing"], moves: ["A01", "A03"] };
+    let cState = { hp: 140, maxHp: 140, stats: { atk: 90, def: 100, spa: 70, spd: 110 }, types: ["glace"], moves: ["A02"] };
+
+    function addLog(msg, color = "#00ffcc") {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function calculateDamage(move, atk, def) {
+        const aStat = move.cat === "Physique" ? atk.stats.atk : atk.stats.spa;
+        const dStat = move.cat === "Physique" ? def.stats.def : def.stats.spd;
+        
+        let base = Math.floor(((move.puissance * aStat) / dStat) / 2);
+        let multi = 1.0;
+
+        def.types.forEach(tDef => {
+            if (typeTable[move.type] && typeTable[move.type][tDef]) {
+                multi *= typeTable[move.type][tDef];
             }
-        }
+        });
 
-        function spawn(id, base, stat, x, y, team) {
-            if(!base || !stat) return;
-            
-            const u = {
-                id, team, x, y, hp: stat.hp, maxHp: stat.hp, atk: stat.atk, baseAtk: stat.atk,
-                range: stat.rng * 80, as: stat.as, spd: stat.spd, power: stat.power || "none",
-                vx: (team === 'team-player' ? 1 : -1) * stat.spd, vy: (Math.random()-0.5) * stat.spd,
-                lastAtk: 0, lastTick: Date.now(), poisonTicks: 0, burnTicks: 0, frostTicks: 0,
-                isParalyzed: false, dead: false, baseSpd: stat.spd, turboBonus: 0
-            };
+        return { total: Math.max(1, Math.floor(base * multi)), multi };
+    }
 
-            const el = document.createElement('div');
-            el.className = `unit ${team}`;
-            let cleanImgName = base.img.replace('Carte/', '');
-            el.style.backgroundImage = `url('Carte/${encodeURI(cleanImgName)}')`;
-            
-            el.innerHTML = `
-                <div class="hp-container"><div class="hp-bar"></div></div>
-                <div class="shield-fx"></div>
-                <div class="berserk-fx"></div>
-            `;
-            
-            document.getElementById('arena').appendChild(el);
-            u.el = el;
-            u.hpBar = el.querySelector('.hp-bar');
-            u.shieldEl = el.querySelector('.shield-fx');
-            u.berserkEl = el.querySelector('.berserk-fx');
-            
-            if(u.power.startsWith("tank")) u.shieldEl.style.display = "block";
-            
-            units.push(u);
-        }
+    function updateUI() {
+        document.getElementById('player-hp').style.width = (pState.hp / pState.maxHp * 100) + "%";
+        document.getElementById('cpu-hp').style.width = (cState.hp / cState.maxHp * 100) + "%";
+        document.getElementById('player-hp-text').textContent = pState.hp + " / " + pState.maxHp + " PV";
+        document.getElementById('cpu-hp-text').textContent = cState.hp + " / " + cState.maxHp + " PV";
+    }
 
-        function update() {
-            if(!battleActive) return;
+    async function turn(mId) {
+        document.querySelectorAll('.atk-btn').forEach(b => b.disabled = true);
+        
+        // Joueur
+        const m = movesDB[mId];
+        const res = calculateDamage(m, pState, cState);
+        cState.hp = Math.max(0, cState.hp - res.total);
+        addLog("Tu lances " + m.nom + " !");
+        if(res.multi > 1) addLog("C'est super efficace !", "#ffcc00");
+        if(res.multi < 1 && res.multi > 0) addLog("Ce n'est pas très efficace...", "#888");
+        updateUI();
 
-            units.forEach(u => {
-                if(u.dead) return;
+        if(cState.hp <= 0) return addLog("VICTOIRE !", "#00ff00");
 
-                if(u.hp <= 0) { die(u); return; }
+        // Ordinateur
+        await new Promise(r => setTimeout(r, 1000));
+        const cm = movesDB["A02"];
+        const cres = calculateDamage(cm, cState, pState);
+        pState.hp = Math.max(0, pState.hp - cres.total);
+        addLog("L'ordinateur utilise " + cm.nom + " !", "#ff4444");
+        updateUI();
 
-                // --- GESTION DES TICKS (UNE FOIS PAR SECONDE) ---
-                if (Date.now() - u.lastTick > 1000) {
-                    
-                    // 1. MEDIC (Soin)
-                    if (u.power.startsWith("medic")) {
-                        const soin = getTier(u.power) * 5 + 5;
-                        units.forEach(allie => {
-                            if (!allie.dead && allie.team === u.team && getDist(u, allie) < 180) {
-                                if (allie.hp < allie.maxHp) {
-                                    allie.hp = Math.min(allie.maxHp, allie.hp + soin);
-                                    showFx(allie, "✨", "#00ffcc");
-                                }
-                            }
-                        });
-                    }
+        if(pState.hp <= 0) return addLog("DÉFAITE...", "#ff0000");
+        document.querySelectorAll('.atk-btn').forEach(b => b.disabled = false);
+    }
 
-                    // 2. VENIN (Dégâts continus)
-                    if (u.poisonTicks > 0) {
-                        u.hp -= 7; // Dégâts de poison
-                        u.poisonTicks--;
-                        showFx(u, "🤢", "#4ecb71");
-                    }
-
-                    // 3. BRÛLURE (Dégâts continus)
-                    if (u.burnTicks > 0) {
-                        u.hp -= 10; // Dégâts de feu
-                        u.burnTicks--;
-                        showFx(u, "🔥", "#ff5f00");
-                    }
-
-                    // 4. GIVRE (Ralentissement)
-                    if (u.frostTicks > 0) {
-                        u.frostTicks--;
-                        if (u.frostTicks <= 0) {
-                            u.spd = u.baseSpd + u.turboBonus;
-                            u.el.style.filter = "none";
-                        }
-                    }
-
-                    u.lastTick = Date.now();
-                }
-
-                // --- STASE / PARALYSIE ---
-                let prevPara = u.isParalyzed;
-                u.isParalyzed = false;
-                if (!(u.power.startsWith("aura_stop"))) {
-                    units.forEach(owner => {
-                        if(!owner.dead && owner.team !== u.team && owner.power.startsWith("aura_stop") && owner.hp < owner.maxHp * 0.5) {
-                            if(getDist(u, owner) < 150) u.isParalyzed = true;
-                        }
-                    });
-                }
-
-                if(u.isParalyzed) {
-                    u.el.classList.add('paralyzed');
-                } else {
-                    u.el.classList.remove('paralyzed');
-                    if (prevPara || (u.vx === 0 && u.vy === 0)) {
-                        let ang = Math.random() * Math.PI * 2;
-                        u.vx = Math.cos(ang) * u.spd; u.vy = Math.sin(ang) * u.spd;
-                    }
-                    u.x += u.vx; u.y += u.vy;
-                }
-
-                // REBONDS ET TURBO
-                if(u.x <= 0 || u.x >= ARENA_W - UNIT_SIZE) { 
-                    u.vx *= -1; 
-                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 9); u.spd = u.baseSpd + u.turboBonus; }
-                }
-                if(u.y <= 0 || u.y >= ARENA_H - UNIT_SIZE) { 
-                    u.vy *= -1; 
-                    if(u.power.startsWith("turbo")) { u.turboBonus = Math.min(u.turboBonus+0.3, 9); u.spd = u.baseSpd + u.turboBonus; }
-                }
-
-                // COLLISIONS
-                units.forEach(o => {
-                    if(o === u || o.dead) return;
-                    let dx = o.x - u.x, dy = o.y - u.y, dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist < UNIT_SIZE - 5) {
-                        let angle = Math.atan2(dy, dx);
-                        u.vx = -Math.cos(angle) * u.spd; u.vy = -Math.sin(angle) * u.spd;
-                        o.vx = Math.cos(angle) * o.spd; o.vy = Math.sin(angle) * o.spd;
-                        if(u.turboBonus > 0) {
-                            u.turboBonus = 0;
-                            u.spd = u.baseSpd;
-                        }
-                        if(o.turboBonus > 0) {
-                            o.turboBonus = 0;
-                            o.spd = o.baseSpd;
-                        }
-                        if(u.burnTicks > 0 && o.team === u.team) o.burnTicks = u.burnTicks;
-                    }
-                });
-
-                // BERSERK
-                if(u.power.startsWith("berserk")) {
-                    if(u.hp < u.maxHp * 0.4) {
-                        u.atk = u.baseAtk * (1 + getTier(u.power)*0.4);
-                        u.berserkEl.style.display = "block";
-                    } else { u.atk = u.baseAtk; u.berserkEl.style.display = "none"; }
-                }
-
-                // IA COMBAT
-                let enemies = units.filter(e => !e.dead && e.team !== u.team);
-                let target = enemies.sort((a,b) => getDist(u,a) - getDist(u,b))[0];
-                if(target && getDist(u, target) <= u.range && !u.isParalyzed) {
-                    if(Date.now() - u.lastAtk > u.as) { shoot(u, target); u.lastAtk = Date.now(); }
-                }
-
-                u.el.style.left = u.x + "px"; u.el.style.top = u.y + "px";
-                u.hpBar.style.width = Math.max(0, (u.hp / u.maxHp) * 100) + "%";
-            });
-
-            checkWin();
-            if(battleActive) requestAnimationFrame(update);
-        }
-
-        function shoot(u, t) {
-            const b = document.createElement('div');
-            b.className = "bullet";
-            b.style.left = (u.x+25)+"px"; b.style.top = (u.y+25)+"px";
-            document.getElementById('arena').appendChild(b);
-            let start = Date.now(), dur = 250, sX = u.x+25, sY = u.y+25;
-            function anim() {
-                let p = (Date.now() - start) / dur;
-                if(p >= 1 || t.dead) { b.remove(); if(!t.dead) hit(u, t); }
-                else {
-                    b.style.left = (sX + (t.x+25 - sX) * p) + "px";
-                    b.style.top = (sY + (t.y+25 - sY) * p) + "px";
-                    requestAnimationFrame(anim);
-                }
-            }
-            requestAnimationFrame(anim);
-        }
-
-        function hit(u, t) {
-            if (t.dead) return;
-            let d = u.atk;
-            if (u.turboBonus > 0) {
-                    let damageMultiplier = 1 + (u.turboBonus * 0.5); 
-                    d *= damageMultiplier;
-                    showFx(u, "CRIT! " + Math.round(d), "#ffff00"); // Affiche un petit texte jaune
-                }
-            const uT = getTier(u.power);
-            const tT = getTier(t.power);
-
-            if (t.power.startsWith("phalanx")) {
-                let neighbors = units.filter(a => !a.dead && a.team === t.team && a !== t && getDist(t, a) < 100).length;
-                d *= (1 - (neighbors * 0.20));
-            }
-
-            if (u.power.startsWith("piercing") && t.power.startsWith("tank")) d *= (1 + uT * 0.25); 
-            else if (t.power.startsWith("tank")) d *= (1 - tT * 0.2);
-            
-            if(u.power.startsWith("sniper") && getDist(u,t) > 250) d *= (1 + uT * 0.5);
-
-            // Applique les Ticks
-            if(u.power.startsWith("poison")) { t.poisonTicks = 5; showFx(t, "POISON!", "#4ecb71"); }
-            if(u.power.startsWith("burn")) { t.burnTicks = 5; showFx(t, "FEU!", "#ff5f00"); }
-            if(u.power.startsWith("frost")) {
-                t.frostTicks = 5;
-                t.spd = t.baseSpd * (1 - (uT * 0.2 + 0.2));
-                t.el.style.filter = "hue-rotate(180deg) brightness(1.5)";
-            }
-
-            if(u.power.startsWith("knockback")) {
-                let ang = Math.atan2(t.y - u.y, t.x - u.x);
-                t.x += Math.cos(ang) * 30; t.y += Math.sin(ang) * 30;
-            }
-
-            if(u.power.startsWith("vampire")) u.hp = Math.min(u.maxHp, u.hp + (d*0.2));
-
-            t.hp -= d;
-        }
-
-        function die(u) {
-            if(u.dead) return;
-            u.dead = true; u.el.style.display = "none";
-            if(u.power.startsWith("last_blast")) {
-                const ex = document.createElement('div');
-                ex.className = "explosion";
-                ex.style.left = (u.x-60)+"px"; ex.style.top = (u.y-60)+"px";
-                ex.style.width = ex.style.height = (getTier(u.power)*120)+"px";
-                document.getElementById('arena').appendChild(ex);
-                units.forEach(o => { if(!o.dead && o.team !== u.team && getDist(u,o) < 150) o.hp -= 40; });
-                setTimeout(() => ex.remove(), 500);
-            }
-        }
-
-        function showFx(u, txt, col) {
-            const f = document.createElement('div');
-            f.className = "effect-text"; f.style.color = col; f.innerText = txt;
-            f.style.left = u.x + "px"; f.style.top = (u.y - 20) + "px";
-            document.getElementById('arena').appendChild(f);
-            setTimeout(() => f.remove(), 800);
-        }
-
-        function checkWin() {
-            const p = units.filter(u=>u.team==='team-player' && !u.dead).length;
-            const e = units.filter(u=>u.team==='team-enemy' && !u.dead).length;
-            if(battleActive && (p === 0 || e === 0)) {
-                battleActive = false;
-                alert(p === 0 ? "DÉFAITE" : "VICTOIRE");
-                location.reload();
-            }
-        }
-    </script>
+    function init() {
+        const cont = document.getElementById('move-container');
+        pState.moves.forEach(id => {
+            const b = document.createElement('button');
+            b.className = 'atk-btn';
+            b.innerHTML = movesDB[id].nom + " <span class='type-badge'>" + movesDB[id].type + "</span>";
+            b.onclick = () => turn(id);
+            cont.appendChild(b);
+        });
+        updateUI();
+        addLog("Arène prête. En attente de vos ordres.");
+    }
+    init();
+</script>
 </body>
 </html>

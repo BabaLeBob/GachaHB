@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Équipe de Combat</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card { background: #16213e; border: 2px solid #533483; padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; transition: 0.3s; }
+        .card:hover { transform: scale(1.05); border-color: #e94560; }
+        .card.selected { border-color: #4ecca3; background: #0f3460; box-shadow: 0 0 10px #4ecca3; }
+        .team-counter { font-size: 1.5em; background: #e94560; padding: 10px; border-radius: 5px; position: sticky; top: 10px; z-index: 100; display: inline-block; }
+        .btn-save { background: #4ecca3; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 1.2em; display: block; margin: 20px auto; }
+        .btn-save:disabled { background: #555; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Constitue ton équipe (6 max)</h1>
+    <div class="team-counter">Membres : <span id="count">0</span> / 6</div>
+    
+    <div class="grid" id="available-cards">
+        <!-- Rempli par JS -->
+    </div>
+
+    <button class="btn-save" id="save-btn" disabled onclick="saveTeam()">Valider l'Équipe</button>
+</div>
+
+<script>
+    let selectedCards = [];
+    // Simulation des données (normalement chargées via fetch('cards_battle_data.json'))
+    const allCards = {
+        "001": { "nom": "Acolyte Shinseina", "types": ["Poing"] },
+        "007": { "nom": "Reylen", "types": ["Tranche", "Ténèbre"] },
+        "003": { "nom": "Thorgestr", "types": ["Electrique"] },
+        "025": { "nom": "Duncan", "types": ["Eau"] },
+        "OP017": { "nom": "Ryh", "types": ["Feu", "Poison"] },
+        "008": { "nom": "Tsuki", "types": ["Plante", "Glace"] }
+    };
+
+    function displayCards() {
+        const grid = document.getElementById('available-cards');
+        for (let id in allCards) {
+            const card = allCards[id];
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.id = `card-${id}`;
+            div.innerHTML = `<strong>${card.nom}</strong><br><small>${card.types.join(' / ')}</small>`;
+            div.onclick = () => toggleCard(id);
+            grid.appendChild(div);
+        }
+    }
+
+    function toggleCard(id) {
+        const index = selectedCards.indexOf(id);
+        if (index > -1) {
+            selectedCards.splice(index, 1);
+            document.getElementById(`card-${id}`).classList.remove('selected');
+        } else if (selectedCards.length < 6) {
+            selectedCards.push(id);
+            document.getElementById(`card-${id}`).classList.add('selected');
+        }
+
+        document.getElementById('count').textContent = selectedCards.length;
+        document.getElementById('save-btn').disabled = selectedCards.length !== 6;
+    }
+
+    function saveTeam() {
+        localStorage.setItem('playerTeam', JSON.stringify(selectedCards));
+        alert("Équipe enregistrée ! Redirection vers le combat...");
+        // window.location.href = 'combat.html';
+    }
+
+    displayCards();
+</script>
+</body>
+</html>
