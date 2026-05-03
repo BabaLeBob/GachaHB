@@ -69,7 +69,7 @@
     async function initCombat() {
         try {
             const [movesRes, battleRes] = await Promise.all([
-                fetch('moves.json'), // Tu devras avoir un fichier moves.json ou les mettre ici
+                fetch('attaques_references.json'), 
                 fetch('cards_battle_data.json')
             ]);
             movesDB = await movesRes.json();
