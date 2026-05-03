@@ -3,140 +3,196 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Simulateur de Combat Gacha V2</title>
+    <title>Combat Final - Gacha</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b18; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #battle-arena { width: 850px; height: 450px; background: #16213e; border: 5px solid #533483; position: relative; border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.8); overflow: hidden; }
+        #arena { width: 850px; height: 500px; background: #16213e; border: 5px solid #533483; position: relative; border-radius: 20px; overflow: hidden; }
         
-        .fighter { width: 220px; position: absolute; text-align: center; transition: all 0.4s ease; }
-        #player-active { bottom: 40px; left: 80px; }
-        #cpu-active { top: 40px; right: 80px; }
+        .fighter { width: 220px; position: absolute; text-align: center; transition: all 0.5s ease; }
+        #p-pos { bottom: 30px; left: 50px; }
+        #c-pos { top: 30px; right: 50px; }
         
-        .hp-container { background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; border: 1px solid #533483; }
-        .hp-bar { width: 100%; height: 12px; background: #444; border-radius: 6px; overflow: hidden; margin-top: 5px; }
-        .hp-inner { height: 100%; background: #00ff88; width: 100%; transition: width 0.5s ease; }
+        .hp-box { background: rgba(0,0,0,0.8); padding: 8px; border-radius: 8px; border: 2px solid #533483; }
+        .hp-bar { width: 100%; height: 10px; background: #444; border-radius: 5px; margin-top: 5px; }
+        .hp-fill { height: 100%; background: #00ff88; width: 100%; transition: width 0.4s; }
         
-        .sprite { font-size: 80px; filter: drop-shadow(2px 4px 6px black); margin: 10px 0; }
+        .char-img { width: 180px; height: 180px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
         
-        #log { width: 850px; height: 120px; background: rgba(0,0,0,0.9); border: 2px solid #533483; margin-top: 15px; padding: 15px; overflow-y: auto; font-family: 'Courier New', monospace; color: #00ffcc; font-size: 0.9em; box-sizing: border-box; }
+        #log { width: 850px; height: 100px; background: #000; border: 2px solid #533483; margin-top: 10px; padding: 10px; overflow-y: auto; font-family: monospace; color: #00ffcc; }
         
-        .controls { margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 850px; }
-        .atk-btn { padding: 15px; background: #16213e; border: 2px solid #e94560; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em; }
-        .atk-btn:hover { background: #e94560; transform: translateY(-2px); }
-        .atk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 850px; margin-top: 10px; }
+        .atk-btn { padding: 15px; background: #1a1a2e; border: 2px solid #e94560; color: white; border-radius: 8px; cursor: pointer; }
+        .atk-btn:hover:not(:disabled) { background: #e94560; }
         
-        .type-badge { font-size: 0.7em; padding: 2px 5px; border-radius: 4px; margin-left: 5px; background: #533483; text-transform: uppercase; }
+        .team-status { position: absolute; bottom: 10px; right: 10px; font-size: 0.8em; opacity: 0.7; }
     </style>
 </head>
 <body>
-    <h1>Arène de Combat Gacha</h1>
-
-    <div id="battle-arena">
-        <div id="cpu-active" class="fighter">
-            <div class="hp-container">
-                <strong id="cpu-name">ORDINATEUR</strong>
-                <div class="hp-bar"><div id="cpu-hp" class="hp-inner"></div></div>
-                <small id="cpu-hp-text">100/100 PV</small>
+    <div id="arena">
+        <!-- BOT -->
+        <div id="c-pos" class="fighter">
+            <div class="hp-box">
+                <strong id="c-name">BOT</strong>
+                <div class="hp-bar"><div id="c-hp-fill" class="hp-fill"></div></div>
+                <small id="c-hp-txt">??/??</small>
             </div>
-            <div class="sprite">👹</div>
+            <img id="c-img" class="char-img" src="">
         </div>
 
-        <div id="player-active" class="fighter">
-            <div class="sprite">⚔️</div>
-            <div class="hp-container">
-                <strong id="player-name">JOUEUR</strong>
-                <div class="hp-bar"><div id="player-hp" class="hp-inner"></div></div>
-                <small id="player-hp-text">100/100 PV</small>
+        <!-- JOUEUR -->
+        <div id="p-pos" class="fighter">
+            <img id="p-img" class="char-img" src="">
+            <div class="hp-box">
+                <strong id="p-name">CHARGEMENT...</strong>
+                <div class="hp-bar"><div id="p-hp-fill" class="hp-fill"></div></div>
+                <small id="p-hp-txt">??/??</small>
             </div>
         </div>
+        
+        <div class="team-status">Équipe : <span id="p-team-idx">1</span>/6 | Bot : <span id="c-team-idx">1</span>/6</div>
     </div>
 
-    <div id="log">Initialisation des systèmes élémentaires...</div>
-
-    <div class="controls" id="move-container"></div>
+    <div id="log">> Initialisation du combat...</div>
+    <div id="controls" class="controls"></div>
 
 <script>
     const typeTable = {"Poing": {"glace": 2, "roche": 0.5}, "Tranche": {"Poing": 2, "Feu": 0.5, "plante": 2, "roche": 0.5, "electrique": 0.5}, "Feu": {"Tranche": 2, "Feu": 0.5, "glace": 2, "plante": 2, "Eau": 0.5, "roche": 0.5, "Poison": 0.5}, "glace": {"Feu": 0.5, "glace": 0.5, "Eau": 2, "roche": 2, "electrique": 2, "Poison": 0.5}, "plante": {"Feu": 0.5, "glace": 0.5, "plante": 2, "Eau": 0.5, "roche": 2, "electrique": 2, "Poison": 2}, "Eau": {"glace": 2, "plante": 0.5, "Eau": 0.5, "roche": 0.5, "Poison": 2}, "roche": {"Poing": 2, "Tranche": 2, "glace": 2, "plante": 0.5, "Eau": 0.5, "roche": 0.5, "electrique": 0.5}, "electrique": {"plante": 0.5, "Eau": 2, "roche": 0.5, "electrique": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 2}, "t\u00e9n\u00e8bre": {"Poing": 2, "glace": 0.5, "electrique": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 2}, "Poison": {"Feu": 2, "glace": 0.5, "plante": 0.5, "t\u00e9n\u00e8bre": 2, "Poison": 0.5}};
+    let movesDB = {};
     
-    // Données fictives pour test (à remplacer par ton JSON)
-    const movesDB = {
-        "A01": { nom: "Coup de Poing", puissance: 40, type: "Poing", cat: "Physique" },
-        "A02": { nom: "Tranche-Nuit", puissance: 70, type: "Tranche", cat: "Physique" },
-        "A03": { nom: "Boule de Feu", puissance: 90, type: "Feu", cat: "Special" },
-        "A04": { nom: "Éclair Noir", puissance: 80, type: "electrique", cat: "Special" }
-    };
+    // Équipes
+    let playerTeam = JSON.parse(localStorage.getItem('playerTeam')) || [];
+    let botTeam = [];
+    
+    let pIdx = 0;
+    let cIdx = 0;
 
-    let pState = { hp: 150, maxHp: 150, stats: { atk: 100, def: 80, spa: 110, spd: 90 }, types: ["Feu", "Poing"], moves: ["A01", "A03"] };
-    let cState = { hp: 140, maxHp: 140, stats: { atk: 90, def: 100, spa: 70, spd: 110 }, types: ["glace"], moves: ["A02"] };
+    async function initCombat() {
+        try {
+            const [movesRes, battleRes] = await Promise.all([
+                fetch('moves.json'), // Tu devras avoir un fichier moves.json ou les mettre ici
+                fetch('cards_battle_data.json')
+            ]);
+            movesDB = await movesRes.json();
+            const battleData = await battleRes.json();
 
-    function addLog(msg, color = "#00ffcc") {
-        const log = document.getElementById('log');
-        log.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
+            // Création de l'équipe du BOT (6 x "001")
+            for(let i=0; i<6; i++) {
+                botTeam.push({
+                    id: "001",
+                    nom: "Acolyte Shinseina",
+                    img: "Shinseina1.png", // Provient de tes données
+                    ...battleData["001"]
+                });
+            }
+
+            if(playerTeam.length === 0) {
+                alert("Erreur: Aucune équipe choisie !");
+                return;
+            }
+
+            startTurn();
+        } catch(e) {
+            console.error(e);
+            addLog("Erreur de chargement des fichiers JSON !");
+        }
     }
 
-    function calculateDamage(move, atk, def) {
-        const aStat = move.cat === "Physique" ? atk.stats.atk : atk.stats.spa;
-        const dStat = move.cat === "Physique" ? def.stats.def : def.stats.spd;
-        
-        let base = Math.floor(((move.puissance * aStat) / dStat) / 2);
-        let multi = 1.0;
-
-        def.types.forEach(tDef => {
-            if (typeTable[move.type] && typeTable[move.type][tDef]) {
-                multi *= typeTable[move.type][tDef];
-            }
-        });
-
-        return { total: Math.max(1, Math.floor(base * multi)), multi };
+    function addLog(msg, col="#00ffcc") {
+        const l = document.getElementById('log');
+        l.innerHTML += `<div style="color:${col}">> ${msg}</div>`;
+        l.scrollBy(0, 100);
     }
 
     function updateUI() {
-        document.getElementById('player-hp').style.width = (pState.hp / pState.maxHp * 100) + "%";
-        document.getElementById('cpu-hp').style.width = (cState.hp / cState.maxHp * 100) + "%";
-        document.getElementById('player-hp-text').textContent = pState.hp + " / " + pState.maxHp + " PV";
-        document.getElementById('cpu-hp-text').textContent = cState.hp + " / " + cState.maxHp + " PV";
+        const p = playerTeam[pIdx];
+        const c = botTeam[cIdx];
+
+        // Player
+        document.getElementById('p-name').textContent = p.nom;
+        document.getElementById('p-img').src = p.img;
+        document.getElementById('p-hp-fill').style.width = (p.stats.hp / p.maxHp * 100) + "%";
+        document.getElementById('p-hp-txt').textContent = p.stats.hp + "/" + p.maxHp;
+
+        // Bot
+        document.getElementById('c-name').textContent = c.nom;
+        document.getElementById('c-img').src = c.img;
+        document.getElementById('c-hp-fill').style.width = (c.stats.hp / c.maxHp * 100) + "%";
+        document.getElementById('c-hp-txt').textContent = c.stats.hp + "/" + c.maxHp;
+        
+        document.getElementById('p-team-idx').textContent = pIdx + 1;
+        document.getElementById('c-team-idx').textContent = cIdx + 1;
     }
 
-    async function turn(mId) {
+    function startTurn() {
+        // On initialise les PV Max au premier tour de chaque perso
+        if(!playerTeam[pIdx].maxHp) playerTeam[pIdx].maxHp = playerTeam[pIdx].stats.hp;
+        if(!botTeam[cIdx].maxHp) botTeam[cIdx].maxHp = botTeam[cIdx].stats.hp;
+
+        updateUI();
+        const cont = document.getElementById('controls');
+        cont.innerHTML = "";
+
+        playerTeam[pIdx].moves.forEach(mId => {
+            const move = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
+            const btn = document.createElement('button');
+            btn.className = 'atk-btn';
+            btn.innerHTML = `${move.nom} <br><small>${move.type} (${move.puissance})</small>`;
+            btn.onclick = () => play(mId);
+            cont.appendChild(btn);
+        });
+    }
+
+    async function play(mId) {
         document.querySelectorAll('.atk-btn').forEach(b => b.disabled = true);
         
-        // Joueur
-        const m = movesDB[mId];
-        const res = calculateDamage(m, pState, cState);
-        cState.hp = Math.max(0, cState.hp - res.total);
-        addLog("Tu lances " + m.nom + " !");
-        if(res.multi > 1) addLog("C'est super efficace !", "#ffcc00");
-        if(res.multi < 1 && res.multi > 0) addLog("Ce n'est pas très efficace...", "#888");
+        const p = playerTeam[pIdx];
+        const c = botTeam[cIdx];
+        const move = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
+
+        // 1. Joueur attaque
+        const dmg = calc(move, p, c);
+        c.stats.hp = Math.max(0, c.stats.hp - dmg.total);
+        addLog(`${p.nom} utilise ${move.nom} !`);
+        if(dmg.multi > 1) addLog("C'est super efficace !", "#ffcc00");
         updateUI();
 
-        if(cState.hp <= 0) return addLog("VICTOIRE !", "#00ff00");
+        if(c.stats.hp <= 0) {
+            addLog(`Le ${c.nom} adverse est K.O. !`, "#ff4444");
+            cIdx++;
+            if(cIdx >= 6) return addLog("VICTOIRE TOTALE !", "#00ff00");
+            await new Promise(r => setTimeout(r, 1000));
+            return startTurn();
+        }
 
-        // Ordinateur
-        await new Promise(r => setTimeout(r, 1000));
-        const cm = movesDB["A02"];
-        const cres = calculateDamage(cm, cState, pState);
-        pState.hp = Math.max(0, pState.hp - cres.total);
-        addLog("L'ordinateur utilise " + cm.nom + " !", "#ff4444");
+        // 2. Bot attaque
+        await new Promise(r => setTimeout(r, 800));
+        const cMove = movesDB[c.moves[0]] || { nom: "Charge", puissance: 40, type: "Poing", cat: "Physique" };
+        const cdmg = calc(cMove, c, p);
+        p.stats.hp = Math.max(0, p.stats.hp - cdmg.total);
+        addLog(`${c.nom} réplique avec ${cMove.nom} !`, "#ff4444");
         updateUI();
 
-        if(pState.hp <= 0) return addLog("DÉFAITE...", "#ff0000");
+        if(p.stats.hp <= 0) {
+            addLog(`${p.nom} est K.O. !`, "#ff4444");
+            pIdx++;
+            if(pIdx >= 6) return addLog("DÉFAITE... Ton équipe est décimée.", "#ff0000");
+            await new Promise(r => setTimeout(r, 1000));
+            return startTurn();
+        }
+
         document.querySelectorAll('.atk-btn').forEach(b => b.disabled = false);
     }
 
-    function init() {
-        const cont = document.getElementById('move-container');
-        pState.moves.forEach(id => {
-            const b = document.createElement('button');
-            b.className = 'atk-btn';
-            b.innerHTML = movesDB[id].nom + " <span class='type-badge'>" + movesDB[id].type + "</span>";
-            b.onclick = () => turn(id);
-            cont.appendChild(b);
-        });
-        updateUI();
-        addLog("Arène prête. En attente de vos ordres.");
+    function calc(m, a, d) {
+        const atkS = m.cat === "Physique" ? a.stats.atk : a.stats.spa;
+        const defS = m.cat === "Physique" ? d.stats.def : d.stats.spd;
+        let base = Math.floor(((m.puissance * atkS) / defS) / 2);
+        let mult = 1.0;
+        d.types.forEach(t => { if(typeTable[m.type] && typeTable[m.type][t]) mult *= typeTable[m.type][t]; });
+        return { total: Math.max(1, Math.floor(base * mult)), multi: mult };
     }
-    init();
+
+    initCombat();
 </script>
 </body>
 </html>
