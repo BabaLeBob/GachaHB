@@ -68,32 +68,50 @@
 
     async function initCombat() {
         try {
-            const [movesRes, battleRes] = await Promise.all([
-                fetch('attaques_references.json'), 
-                fetch('cards_battle_data.json')
+            addLog("Chargement des données...");
+
+            // On charge les 3 fichiers nécessaires[cite: 8, 11]
+            // ATTENTION : Vérifie que les noms correspondent exactement à tes fichiers sur GitHub !
+            const [movesRes, battleRes, shopRes] = await Promise.all([
+                fetch('attaques_reference.json'), // Changé ici[cite: 13]
+                fetch('cards_battle_data.json'),
+                fetch('shop.json')
             ]);
+
+            // Vérification si les fichiers existent bien sur le serveur
+            if (!movesRes.ok || !battleRes.ok || !shopRes.ok) {
+                throw new Error(`Fichier introuvable sur GitHub. Vérifie les noms (attaques_reference_2.json, etc.)`);
+            }
+
             movesDB = await movesRes.json();
             const battleData = await battleRes.json();
+            const shopData = await shopRes.json();
+
+            // Récupération des infos pour le BOT (ID 001)[cite: 11, 12]
+            const botStats = battleData["001"];
+            const botInfo = shopData["001"] || { nom: "Acolyte Shinseina"};
 
             // Création de l'équipe du BOT (6 x "001")
+            botTeam = []; // On vide au cas où
             for(let i=0; i<6; i++) {
                 botTeam.push({
                     id: "001",
-                    nom: "Acolyte Shinseina",
-                    img: "Shinseina1.png", // Provient de tes données
-                    ...battleData["001"]
+                    nom: botInfo.nom,
+                    ...JSON.parse(JSON.stringify(botStats)) // On copie les stats proprement
                 });
             }
 
-            if(playerTeam.length === 0) {
-                alert("Erreur: Aucune équipe choisie !");
+            if(!playerTeam || playerTeam.length === 0) {
+                addLog("Erreur: Aucune équipe choisie !", "#ff4444");
                 return;
             }
 
+            addLog("Combat prêt !");
             startTurn();
         } catch(e) {
             console.error(e);
-            addLog("Erreur de chargement des fichiers JSON !");
+            addLog("ERREUR : " + e.message, "#ff4444");
+            addLog("Conseil : Vérifie que 'attaques_reference_2.json' est bien sur ton GitHub.");
         }
     }
 
