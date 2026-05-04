@@ -1,17 +1,17 @@
 {
-    "001": {
+    "A001": {
         "nom": "Tranche",
         "puissance": 70,
         "type": "Tranche",
         "categorie": "Physique"
     },
-    "002": {
+    "A002": {
         "nom": "Rayon Noir",
         "puissance": 60,
         "type": "T\u00e9n\u00e8bre",
         "categorie": "Physique"
     },
-    "003": {
+    "A003": {
         "nom": "Dance lames",
         "puissance": 0,
         "type": "Tranche",
