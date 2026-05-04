@@ -180,7 +180,7 @@
 
         // Déterminer qui attaque en premier
         // Si le Bot a l'attaque 002 et pas le joueur, le Bot commence
-        let botGoesFirst = (botMoveId === "002" && mId !== "002");
+        let botGoesFirst = (botMoveId === "A002" && mId !== "A002");
 
         if (botGoesFirst) {
             // --- LE BOT ATTAQUE EN PREMIER ---
@@ -202,7 +202,7 @@
     async function playerTurn(p, c, move) {
         if (p.status !== "Gel") {
             // --- EFFET SPÉCIAL ATTAQUE 003 ---
-            if (move.id === "003") {
+            if (move.id === "A003") {
                 p.stats.atk += 20; // Augmente l'attaque de 20
                 addLog(`${p.nom} augmente sa puissance !`, "#ffff00"); // Message spécial
             } else {
@@ -225,7 +225,7 @@
         await new Promise(r => setTimeout(r, 800));[cite, 2]
         if (c.status !== "Gel") {
             // --- EFFET SPÉCIAL ATTAQUE 003 ---
-            if (move.id === "003") {
+            if (move.id === "A003") {
                 c.stats.atk += 20; // Augmente l'attaque du bot de 20
                 addLog(`${c.nom} augmente sa puissance !`, "#ffff00");[cite, 2]
             } else {
