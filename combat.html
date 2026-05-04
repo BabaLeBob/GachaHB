@@ -174,59 +174,86 @@
         
         const p = playerTeam[pIdx];
         const c = botTeam[cIdx];
+        const playerMove = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
+        const botMoveId = c.moves[0];
+        const botMove = movesDB[botMoveId] || { nom: "Charge", puissance: 40, type: "Poing", cat: "Physique" };
 
-        // 1. TOUR DU JOUEUR
-        // On vérifie si le joueur n'est pas gelé avant d'attaquer
-        if (p.status !== "Gel") {
-            const move = movesDB[mId] || { nom: "Attaque", puissance: 40, type: "Tranche", cat: "Physique" };
-            const dmg = calc(move, p, c);
-            c.stats.hp = Math.max(0, c.stats.hp - dmg.total);
-            addLog(`${p.nom} utilise ${move.nom} !`);
-            if(dmg.multi > 1) addLog("C'est super efficace !", "#ffcc00");
+        // Déterminer qui attaque en premier
+        // Si le Bot a l'attaque 002 et pas le joueur, le Bot commence
+        let botGoesFirst = (botMoveId === "002" && mId !== "002");
+
+        if (botGoesFirst) {
+            // --- LE BOT ATTAQUE EN PREMIER ---
+            await botTurn(c, p, botMove);
+            if (p.stats.hp > 0) await playerTurn(p, c, playerMove);
         } else {
-            addLog(`${p.nom} est gelé et ne peut pas attaquer !`, "#00ccff");[cite, 2]
+            // --- LE JOUEUR ATTAQUE EN PREMIER (Cas normal ou priorité joueur) ---
+            await playerTurn(p, c, playerMove);
+            if (c.stats.hp > 0) await botTurn(c, p, botMove);
         }
 
-        // Effets de fin de tour pour le Joueur (Brulure / Guérison)
-        handleStatusEndOfTurn(p);
-        updateUI();
+        // Fin de tour : Dégâts de statut et remise à zéro des boutons
+        if (p.stats.hp > 0 && c.stats.hp > 0) {
+            document.querySelectorAll('.atk-btn').forEach(b => b.disabled = false);
+        }
+    }
 
-        // Vérification si le Bot est KO
-        if(c.stats.hp <= 0) {
-            addLog(`Le ${c.nom} adverse est K.O. !`, "#ff4444");
+    // Sous-fonction pour l'action du Joueur
+    async function playerTurn(p, c, move) {
+        if (p.status !== "Gel") {
+            // --- EFFET SPÉCIAL ATTAQUE 003 ---
+            if (move.id === "003") {
+                p.stats.atk += 20; // Augmente l'attaque de 20
+                addLog(`${p.nom} augmente sa puissance !`, "#ffff00"); // Message spécial
+            } else {
+                // Attaque normale
+                const dmg = calc(move, p, c);
+                c.stats.hp = Math.max(0, c.stats.hp - dmg.total);
+                addLog(`${p.nom} utilise ${move.nom} !`);[cite, 2]
+                if(dmg.multi > 1) addLog("C'est super efficace !", "#ffcc00");[cite, 2]
+            }
+        } else {
+            addLog(`${p.nom} est gelé !`, "#00ccff");[cite, 2]
+        }
+        handleStatusEndOfTurn(p);[cite, 2]
+        updateUI();[cite, 2]
+        if(c.stats.hp <= 0) await handleKO(c, "c");[cite, 2]
+    }
+
+    // Sous-fonction pour l'action du Bot
+    async function botTurn(c, p, move) {
+        await new Promise(r => setTimeout(r, 800));[cite, 2]
+        if (c.status !== "Gel") {
+            // --- EFFET SPÉCIAL ATTAQUE 003 ---
+            if (move.id === "003") {
+                c.stats.atk += 20; // Augmente l'attaque du bot de 20
+                addLog(`${c.nom} augmente sa puissance !`, "#ffff00");[cite, 2]
+            } else {
+                // Attaque normale
+                const dmg = calc(move, c, p);
+                p.stats.hp = Math.max(0, p.stats.hp - dmg.total);
+                addLog(`${c.nom} réplique avec ${move.nom} !`, "#ff4444");[cite, 2]
+            }
+        } else {
+            addLog(`${c.nom} est gelé !`, "#00ccff");[cite, 2]
+        }
+        handleStatusEndOfTurn(c);[cite, 2]
+        updateUI();[cite, 2]
+        if(p.stats.hp <= 0) await handleKO(p, "p");[cite, 2]
+    }
+
+    // Fonction pour gérer le KO proprement
+    async function handleKO(char, type) {
+        addLog(`${char.nom} est K.O. !`, "#ff4444");
+        if (type === "c") {
             cIdx++;
             if(cIdx >= 6) return addLog("VICTOIRE TOTALE !", "#00ff00");
-            await new Promise(r => setTimeout(r, 1000));
-            return startTurn();
-        }
-
-        // 2. TOUR DU BOT
-        await new Promise(r => setTimeout(r, 800));
-        
-        // On vérifie si le bot n'est pas gelé avant de répliquer
-        if (c.status !== "Gel") {
-            const cMove = movesDB[c.moves[0]] || { nom: "Charge", puissance: 40, type: "Poing", cat: "Physique" };
-            const cdmg = calc(cMove, c, p);
-            p.stats.hp = Math.max(0, p.stats.hp - cdmg.total);
-            addLog(`${c.nom} réplique avec ${cMove.nom} !`, "#ff4444");
         } else {
-            addLog(`${c.nom} est gelé et ne peut pas attaquer !`, "#00ccff");[cite, 2]
-        }
-
-        // Effets de fin de tour pour le Bot (Brulure / Guérison)
-        handleStatusEndOfTurn(c);
-        updateUI();
-
-        // Vérification si le Joueur est KO
-        if(p.stats.hp <= 0) {
-            addLog(`${p.nom} est K.O. !`, "#ff4444");
             pIdx++;
-            if(pIdx >= 6) return addLog("DÉFAITE... Ton équipe est décimée.", "#ff0000");
-            await new Promise(r => setTimeout(r, 1000));
-            return startTurn();
+            if(pIdx >= 6) return addLog("DÉFAITE...", "#ff0000");
         }
-
-        document.querySelectorAll('.atk-btn').forEach(b => b.disabled = false);
+        await new Promise(r => setTimeout(r, 1000));
+        startTurn();
     }
 
     function calc(m, a, d) {

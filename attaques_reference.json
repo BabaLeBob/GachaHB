@@ -1,20 +1,20 @@
 {
-    "A001": {
-        "nom": "Poing de Feu",
-        "puissance": 75,
-        "type": "Feu",
+    "001": {
+        "nom": "Tranche",
+        "puissance": 70,
+        "type": "Tranche",
         "categorie": "Physique"
     },
-    "A002": {
-        "nom": "Tranche-Herbe",
-        "puissance": 55,
-        "type": "Plante",
+    "002": {
+        "nom": "Rayon Noir",
+        "puissance": 60,
+        "type": "T\u00e9n\u00e8bre",
         "categorie": "Physique"
     },
-    "A003": {
-        "nom": "Hydrocanon",
-        "puissance": 110,
-        "type": "Eau",
+    "003": {
+        "nom": "Dance lames",
+        "puissance": 0,
+        "type": "Tranche",
         "categorie": "Special"
     },
     "A004": {
